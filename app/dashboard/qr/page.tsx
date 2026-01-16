@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,62 +8,65 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Download, Link, QrCode, Copy, Check, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-
-const COLOR_PRESETS = [
-    { fg: '#000000', bg: '#FFFFFF', name: 'Classic' },
-    { fg: '#1a1a2e', bg: '#FFFFFF', name: 'Dark Blue' },
-    { fg: '#16a34a', bg: '#FFFFFF', name: 'Green' },
-    { fg: '#dc2626', bg: '#FFFFFF', name: 'Red' },
-    { fg: '#7c3aed', bg: '#FFFFFF', name: 'Purple' },
-    { fg: '#FFFFFF', bg: '#000000', name: 'Inverted' },
-]
+import {
+    QrCode,
+    Download,
+    Printer,
+    Coffee,
+    Loader2,
+    Smartphone,
+    Palette,
+    RotateCcw
+} from 'lucide-react'
 
 export default function QRCodePage() {
     const [userId, setUserId] = useState<string | null>(null)
+    const [businessName, setBusinessName] = useState('')
+    const [logoUrl, setLogoUrl] = useState<string | null>(null)
+    const [savedQrColor, setSavedQrColor] = useState('#000000')
+    const [qrColor, setQrColor] = useState('#000000')
     const [tableNumber, setTableNumber] = useState('')
-    const [fgColor, setFgColor] = useState('#000000')
-    const [bgColor, setBgColor] = useState('#FFFFFF')
-    const [copied, setCopied] = useState(false)
     const [loading, setLoading] = useState(true)
-    const qrRef = useRef<HTMLDivElement>(null)
+    const printRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
 
     useEffect(() => {
-        const getUser = async () => {
+        const fetchProfile = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-                setUserId(user.id)
+            if (!user) return
+
+            setUserId(user.id)
+
+            const { data } = await supabase
+                .from('profiles')
+                .select('business_name, logo_url, qr_color')
+                .eq('id', user.id)
+                .single()
+
+            if (data) {
+                setBusinessName(data.business_name || 'Kafe')
+                setLogoUrl(data.logo_url)
+                const color = data.qr_color || '#000000'
+                setSavedQrColor(color)
+                setQrColor(color)
             }
             setLoading(false)
         }
-        getUser()
+        fetchProfile()
     }, [supabase])
 
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    // Construct menu URL
+    const baseUrl = 'https://restofy-kafe.vercel.app'
     const menuUrl = userId
         ? `${baseUrl}/menu/${userId}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''
 
-    const copyToClipboard = async () => {
-        try {
-            await navigator.clipboard.writeText(menuUrl)
-            setCopied(true)
-            toast.success('URL copied to clipboard!')
-            setTimeout(() => setCopied(false), 2000)
-        } catch {
-            toast.error('Failed to copy URL')
-        }
-    }
+    const handleDownload = () => {
+        if (!printRef.current) return
 
-    const downloadQRCode = () => {
-        if (!qrRef.current) return
-
-        const svg = qrRef.current.querySelector('svg')
+        const svg = printRef.current.querySelector('svg')
         if (!svg) return
 
-        // Create a canvas
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
         if (!ctx) return
@@ -72,230 +75,285 @@ export default function QRCodePage() {
         canvas.width = size
         canvas.height = size
 
-        // Convert SVG to data URL
         const svgData = new XMLSerializer().serializeToString(svg)
         const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
         const svgUrl = URL.createObjectURL(svgBlob)
 
         const img = new Image()
         img.onload = () => {
-            // Fill background
-            ctx.fillStyle = bgColor
+            ctx.fillStyle = '#FFFFFF'
             ctx.fillRect(0, 0, size, size)
-
-            // Draw QR code
             ctx.drawImage(img, 0, 0, size, size)
 
-            // Download
             const pngUrl = canvas.toDataURL('image/png')
             const downloadLink = document.createElement('a')
             downloadLink.href = pngUrl
-            downloadLink.download = `qr-code${tableNumber ? `-table-${tableNumber}` : ''}.png`
+            downloadLink.download = `qr-code${tableNumber ? `-masa-${tableNumber}` : ''}.png`
             document.body.appendChild(downloadLink)
             downloadLink.click()
             document.body.removeChild(downloadLink)
 
             URL.revokeObjectURL(svgUrl)
-            toast.success('QR Code downloaded!')
         }
         img.src = svgUrl
     }
 
-    const applyPreset = (preset: typeof COLOR_PRESETS[0]) => {
-        setFgColor(preset.fg)
-        setBgColor(preset.bg)
+    const handlePrint = () => {
+        const printContent = document.getElementById('print-card')
+        if (!printContent) return
+
+        const printWindow = window.open('', '', 'width=400,height=600')
+        if (!printWindow) return
+
+        printWindow.document.write(`
+      <html>
+        <head>
+          <title>QR Code - ${businessName}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: system-ui, -apple-system, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              background: white;
+            }
+            .card {
+              width: 300px;
+              padding: 24px;
+              border: 2px solid #e5e5e5;
+              border-radius: 16px;
+              text-align: center;
+            }
+            .logo { font-size: 32px; margin-bottom: 8px; }
+            .cafe-name { font-size: 24px; font-weight: bold; margin-bottom: 16px; }
+            .table-badge { 
+              background: ${qrColor}; 
+              color: white; 
+              padding: 4px 12px; 
+              border-radius: 20px;
+              font-size: 14px;
+              font-weight: 600;
+              margin-bottom: 16px;
+              display: inline-block;
+            }
+            .qr-wrapper { margin: 16px 0; }
+            .instructions { 
+              font-size: 14px; 
+              color: #666; 
+              margin-top: 16px;
+              border-top: 1px solid #e5e5e5;
+              padding-top: 16px;
+            }
+            .icon { font-size: 20px; margin-bottom: 4px; }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `)
+        printWindow.document.close()
+        printWindow.focus()
+        setTimeout(() => {
+            printWindow.print()
+            printWindow.close()
+        }, 250)
     }
 
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
         )
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">QR Code Settings</h2>
-                <p className="text-muted-foreground">
-                    Generate and customize QR codes for your menu.
+                <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <QrCode className="h-7 w-7" />
+                    QR Kod Oluşturucu
+                </h1>
+                <p className="text-slate-500 mt-1">
+                    Masalar için özel QR kodları oluşturun ve yazdırın.
                 </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-                {/* QR Code Preview */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <QrCode className="h-5 w-5" />
-                            Your Menu QR Code
-                        </CardTitle>
-                        <CardDescription>
-                            Customers can scan this to view your menu
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center space-y-6">
-                        <div
-                            ref={qrRef}
-                            className="p-6 rounded-xl shadow-lg"
-                            style={{ backgroundColor: bgColor }}
-                        >
-                            <QRCodeSVG
-                                value={menuUrl || 'https://restofy.app'}
-                                size={200}
-                                fgColor={fgColor}
-                                bgColor={bgColor}
-                                level="H"
-                                includeMargin={false}
-                            />
-                        </div>
-
-                        {/* URL Display */}
-                        <div className="w-full space-y-2">
-                            <Label className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Link className="h-3 w-3" />
-                                Menu URL
-                            </Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    value={menuUrl}
-                                    readOnly
-                                    className="font-mono text-sm"
-                                />
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={copyToClipboard}
-                                >
-                                    {copied ? (
-                                        <Check className="h-4 w-4 text-green-500" />
-                                    ) : (
-                                        <Copy className="h-4 w-4" />
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Download Button */}
-                        <Button onClick={downloadQRCode} className="w-full gap-2">
-                            <Download className="h-4 w-4" />
-                            Download QR Code (PNG)
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                {/* Customization Options */}
+                {/* Settings Panel */}
                 <div className="space-y-6">
-                    {/* Table Number */}
-                    <Card>
+                    <Card className="bg-white border-slate-200 shadow-sm">
                         <CardHeader>
-                            <CardTitle>Table-Specific QR</CardTitle>
-                            <CardDescription>
-                                Generate QR codes pre-filled with a table number
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2">
-                                <Label htmlFor="tableNumber">Table Number (optional)</Label>
-                                <Input
-                                    id="tableNumber"
-                                    placeholder="e.g., 5"
-                                    value={tableNumber}
-                                    onChange={(e) => setTableNumber(e.target.value)}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Leave empty for a general menu QR code
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Color Customization */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Color Customization</CardTitle>
-                            <CardDescription>
-                                Match your QR code to your brand
+                            <CardTitle className="text-slate-800">Ayarlar</CardTitle>
+                            <CardDescription className="text-slate-500">
+                                QR kodunuzu özelleştirin
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {/* Color Presets */}
                             <div className="space-y-2">
-                                <Label>Color Presets</Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {COLOR_PRESETS.map((preset) => (
-                                        <button
-                                            key={preset.name}
-                                            onClick={() => applyPreset(preset)}
-                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border hover:border-primary transition-colors"
-                                            title={preset.name}
-                                        >
-                                            <div
-                                                className="w-4 h-4 rounded border"
-                                                style={{ backgroundColor: preset.fg }}
-                                            />
-                                            <span className="text-sm">{preset.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
+                                <Label htmlFor="tableNumber" className="text-slate-700">Masa Numarası (Opsiyonel)</Label>
+                                <Input
+                                    id="tableNumber"
+                                    placeholder="Örn: 1, 2, 3..."
+                                    value={tableNumber}
+                                    onChange={(e) => setTableNumber(e.target.value)}
+                                    className="border-slate-200"
+                                />
+                                <p className="text-xs text-slate-500">
+                                    Boş bırakırsanız genel menü QR kodu oluşturulur
+                                </p>
                             </div>
 
-                            <Separator />
+                            <Separator className="bg-slate-100" />
 
-                            {/* Custom Colors */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="fgColor">Foreground Color</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="fgColor"
-                                            type="color"
-                                            value={fgColor}
-                                            onChange={(e) => setFgColor(e.target.value)}
-                                            className="w-12 h-10 p-1 cursor-pointer"
-                                        />
-                                        <Input
-                                            value={fgColor}
-                                            onChange={(e) => setFgColor(e.target.value)}
-                                            placeholder="#000000"
-                                            className="font-mono text-sm"
-                                        />
-                                    </div>
+                            {/* QR Color Picker */}
+                            <div className="space-y-2">
+                                <Label className="text-slate-700 flex items-center gap-2">
+                                    <Palette className="h-4 w-4" />
+                                    QR Kod Rengi
+                                </Label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="color"
+                                        value={qrColor}
+                                        onChange={(e) => setQrColor(e.target.value)}
+                                        className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-200 overflow-hidden"
+                                        style={{ padding: 0 }}
+                                    />
+                                    <Input
+                                        value={qrColor}
+                                        onChange={(e) => setQrColor(e.target.value)}
+                                        placeholder="#000000"
+                                        className="w-28 font-mono uppercase border-slate-200"
+                                        maxLength={7}
+                                    />
+                                    {qrColor !== savedQrColor && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setQrColor(savedQrColor)}
+                                            className="text-xs gap-1"
+                                        >
+                                            <RotateCcw className="h-3 w-3" />
+                                            Kayıtlıya Dön
+                                        </Button>
+                                    )}
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="bgColor">Background Color</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="bgColor"
-                                            type="color"
-                                            value={bgColor}
-                                            onChange={(e) => setBgColor(e.target.value)}
-                                            className="w-12 h-10 p-1 cursor-pointer"
-                                        />
-                                        <Input
-                                            value={bgColor}
-                                            onChange={(e) => setBgColor(e.target.value)}
-                                            placeholder="#FFFFFF"
-                                            className="font-mono text-sm"
-                                        />
-                                    </div>
-                                </div>
+                                <p className="text-xs text-slate-500">
+                                    Kalıcı değişiklik için Ayarlar sayfasından kaydedin
+                                </p>
+                            </div>
+
+                            <Separator className="bg-slate-100" />
+
+                            <div className="space-y-2">
+                                <Label className="text-slate-700">Menü Linki</Label>
+                                <Input
+                                    value={menuUrl}
+                                    readOnly
+                                    className="font-mono text-xs border-slate-200 bg-slate-50"
+                                />
+                            </div>
+
+                            <Separator className="bg-slate-100" />
+
+                            <div className="flex gap-2">
+                                <Button onClick={handleDownload} className="flex-1 gap-2 bg-slate-900 hover:bg-slate-800">
+                                    <Download className="h-4 w-4" />
+                                    İndir (PNG)
+                                </Button>
+                                <Button onClick={handlePrint} variant="outline" className="flex-1 gap-2 border-slate-200">
+                                    <Printer className="h-4 w-4" />
+                                    Yazdır
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Tips */}
-                    <Card>
+                    <Card className="bg-white border-slate-200 shadow-sm">
                         <CardHeader>
-                            <CardTitle>Tips</CardTitle>
+                            <CardTitle className="text-slate-800">İpuçları</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-sm text-muted-foreground space-y-2">
-                            <p>• Print each table&apos;s QR code with their table number</p>
-                            <p>• Use high contrast colors for better scanning</p>
-                            <p>• Test the QR code with your phone before printing</p>
-                            <p>• Laminate printed codes for durability</p>
+                        <CardContent className="text-sm text-slate-500 space-y-2">
+                            <p>• Her masa için ayrı QR kod oluşturun</p>
+                            <p>• Yazdırıp lamine edin, daha uzun ömürlü olur</p>
+                            <p>• Telefonunuzla test edin</p>
+                            <p>• QR kodu masanın görünür bir yerine yerleştirin</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Live Preview */}
+                <div>
+                    <Card className="bg-white border-slate-200 shadow-sm">
+                        <CardHeader>
+                            <CardTitle className="text-slate-800">Önizleme</CardTitle>
+                            <CardDescription className="text-slate-500">
+                                Yazdırılacak kart tasarımı
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex justify-center">
+                            {/* Printable Card */}
+                            <div
+                                id="print-card"
+                                className="w-[300px] bg-white border-2 border-slate-200 rounded-2xl p-6 text-center shadow-lg"
+                            >
+                                {/* Logo/Icon */}
+                                <div className="mb-2">
+                                    {logoUrl ? (
+                                        <img
+                                            src={logoUrl}
+                                            alt={businessName}
+                                            className="h-12 w-12 mx-auto rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <Coffee className="h-12 w-12 mx-auto" style={{ color: qrColor }} />
+                                    )}
+                                </div>
+
+                                {/* Cafe Name */}
+                                <h3 className="text-xl font-bold text-slate-800 mb-3">{businessName}</h3>
+
+                                {/* Table Badge */}
+                                {tableNumber && (
+                                    <div
+                                        className="inline-block text-white px-4 py-1 rounded-full text-sm font-semibold mb-4"
+                                        style={{ backgroundColor: qrColor }}
+                                    >
+                                        Masa {tableNumber}
+                                    </div>
+                                )}
+
+                                {/* QR Code */}
+                                <div ref={printRef} className="flex justify-center my-4">
+                                    <QRCodeSVG
+                                        value={menuUrl || 'https://restofy.app'}
+                                        size={180}
+                                        level="H"
+                                        fgColor={qrColor}
+                                        includeMargin={false}
+                                        imageSettings={logoUrl ? {
+                                            src: logoUrl,
+                                            height: 40,
+                                            width: 40,
+                                            excavate: true,
+                                        } : undefined}
+                                    />
+                                </div>
+
+                                {/* Instructions */}
+                                <div className="border-t border-slate-200 pt-4 mt-4">
+                                    <Smartphone className="h-5 w-5 mx-auto mb-2 text-slate-400" />
+                                    <p className="text-sm text-slate-500">
+                                        Menü ve Sipariş için Okutun
+                                    </p>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

@@ -64,7 +64,7 @@ export function ServiceRequestCard({ request, onResolve }: ServiceRequestCardPro
                         </div>
                         <div>
                             <p className="font-bold text-orange-800">
-                                Masa {request.table_number} Garson İstiyor!
+                                Masa {request.table_no} Garson İstiyor!
                             </p>
                             <p className="text-sm text-orange-600">
                                 {formatTime(request.created_at)} • {getTimeAgo(request.created_at)}

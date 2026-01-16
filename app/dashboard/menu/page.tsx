@@ -7,8 +7,21 @@ import { CreateCategoryDialog } from '@/components/menu/create-category-dialog'
 import { CreateMenuItemDialog } from '@/components/menu/create-menu-item-dialog'
 import { MenuItemCard } from '@/components/menu/menu-item-card'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { UtensilsCrossed, FolderOpen, Loader2 } from 'lucide-react'
+import { UtensilsCrossed, FolderOpen, Loader2, Coffee, Utensils, IceCreamCone, Wine } from 'lucide-react'
+
+// Category icons mapping
+const categoryIcons: Record<string, typeof Utensils> = {
+    'İçecekler': Coffee,
+    'Drinks': Coffee,
+    'Kahve': Coffee,
+    'Ana Yemekler': Utensils,
+    'Main': Utensils,
+    'Tatlılar': IceCreamCone,
+    'Desserts': IceCreamCone,
+    'İçkiler': Wine,
+}
 
 export default function MenuManagerPage() {
     const [categories, setCategories] = useState<Category[]>([])
@@ -55,89 +68,146 @@ export default function MenuManagerPage() {
         return menuItems.filter((item) => item.category_id === categoryId)
     }
 
+    const getAvailableCount = (categoryId: string) => {
+        const items = getItemsByCategory(categoryId)
+        return items.filter(item => item.is_available !== false).length
+    }
+
+    const getCategoryIcon = (categoryName: string) => {
+        const Icon = categoryIcons[categoryName] || UtensilsCrossed
+        return Icon
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
         )
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Menu Manager</h2>
-                    <p className="text-muted-foreground">
-                        Manage your categories and menu items.
+                    <h1 className="text-2xl font-bold text-slate-800">Menü Yöneticisi</h1>
+                    <p className="text-slate-500 mt-1">
+                        Kategorilerinizi ve ürünlerinizi yönetin.
                     </p>
                 </div>
                 <CreateCategoryDialog onCategoryCreated={fetchData} />
             </div>
 
-            <Separator />
-
-            {/* Empty state */}
             {categories.length === 0 ? (
-                <Card>
-                    <CardHeader className="text-center">
-                        <div className="mx-auto rounded-full bg-muted p-4 w-fit mb-2">
-                            <FolderOpen className="h-8 w-8 text-muted-foreground" />
+                <Card className="bg-white border-slate-200 shadow-sm">
+                    <CardHeader className="text-center py-12">
+                        <div className="mx-auto rounded-full bg-slate-100 p-4 w-fit mb-4">
+                            <FolderOpen className="h-8 w-8 text-slate-400" />
                         </div>
-                        <CardTitle>No categories yet</CardTitle>
-                        <CardDescription>
-                            Create your first category to start adding menu items.
+                        <CardTitle className="text-slate-800">Henüz kategori yok</CardTitle>
+                        <CardDescription className="text-slate-500 mt-2">
+                            Menü ürünleri eklemek için önce bir kategori oluşturun.
                         </CardDescription>
                     </CardHeader>
                 </Card>
             ) : (
                 /* Categories with items */
                 <div className="space-y-8">
-                    {categories.map((category) => (
-                        <div key={category.id} className="space-y-4">
-                            {/* Category Header */}
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-xl font-semibold flex items-center gap-2">
-                                        <UtensilsCrossed className="h-5 w-5 text-primary" />
-                                        {category.name}
-                                    </h3>
-                                    {category.description && (
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            {category.description}
-                                        </p>
-                                    )}
+                    {categories.map((category) => {
+                        const CategoryIcon = getCategoryIcon(category.name)
+                        const items = getItemsByCategory(category.id)
+                        const availableCount = getAvailableCount(category.id)
+
+                        return (
+                            <div key={category.id} className="space-y-4">
+                                {/* Category Header */}
+                                <div className="flex items-center justify-between bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center">
+                                            <CategoryIcon className="h-6 w-6 text-indigo-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-3">
+                                                {category.name}
+                                                <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">
+                                                    {items.length} ürün
+                                                </Badge>
+                                                {availableCount < items.length && (
+                                                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
+                                                        {items.length - availableCount} stok dışı
+                                                    </Badge>
+                                                )}
+                                            </h3>
+                                            {category.description && (
+                                                <p className="text-sm text-slate-500 mt-0.5">
+                                                    {category.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <CreateMenuItemDialog
+                                        categoryId={category.id}
+                                        categoryName={category.name}
+                                        onItemCreated={fetchData}
+                                    />
                                 </div>
-                                <CreateMenuItemDialog
-                                    categoryId={category.id}
-                                    categoryName={category.name}
-                                    onItemCreated={fetchData}
-                                />
+
+                                {items.length === 0 ? (
+                                    <Card className="border-dashed border-slate-200 bg-slate-50/50">
+                                        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                                            <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                                <UtensilsCrossed className="h-6 w-6 text-slate-400" />
+                                            </div>
+                                            <p className="text-sm text-slate-500">
+                                                Bu kategoride henüz ürün yok.
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                        {items.map((item) => (
+                                            <MenuItemCard
+                                                key={item.id}
+                                                item={item}
+                                                onStatusChange={fetchData}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-
-                            {/* Menu Items Grid */}
-                            {getItemsByCategory(category.id).length === 0 ? (
-                                <Card className="border-dashed">
-                                    <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-                                        <UtensilsCrossed className="h-8 w-8 text-muted-foreground mb-2" />
-                                        <p className="text-sm text-muted-foreground">
-                                            No items in this category yet.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                    {getItemsByCategory(category.id).map((item) => (
-                                        <MenuItemCard key={item.id} item={item} />
-                                    ))}
-                                </div>
-                            )}
-
-                            <Separator className="mt-6" />
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
+            )}
+
+            {/* Summary Footer */}
+            {categories.length > 0 && (
+                <Card className="bg-muted/30">
+                    <CardContent className="py-4">
+                        <div className="flex flex-wrap gap-4 justify-center text-sm">
+                            <div className="flex items-center gap-2">
+                                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                                <span><strong>{categories.length}</strong> Kategori</span>
+                            </div>
+                            <Separator orientation="vertical" className="h-5" />
+                            <div className="flex items-center gap-2">
+                                <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+                                <span><strong>{menuItems.length}</strong> Ürün</span>
+                            </div>
+                            <Separator orientation="vertical" className="h-5" />
+                            <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-green-500" />
+                                <span><strong>{menuItems.filter(i => i.is_available !== false).length}</strong> Stokta</span>
+                            </div>
+                            <Separator orientation="vertical" className="h-5" />
+                            <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-red-500" />
+                                <span><strong>{menuItems.filter(i => i.is_available === false).length}</strong> Tükendi</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             )}
         </div>
     )

@@ -48,7 +48,7 @@ export default function OrdersPage() {
             const { data, error } = await supabase
                 .from('service_requests')
                 .select('*')
-                .eq('profile_id', user.id)
+                .eq('cafe_id', user.id)
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false })
 
@@ -132,13 +132,13 @@ export default function OrdersPage() {
                         event: 'INSERT',
                         schema: 'public',
                         table: 'service_requests',
-                        filter: `profile_id=eq.${user.id}`,
+                        filter: `cafe_id=eq.${user.id}`,
                     },
                     (payload) => {
                         const newRequest = payload.new as ServiceRequest
                         setServiceRequests((prev) => [newRequest, ...prev])
                         playNotificationSound()
-                        toast.error(`🔔 Masa ${newRequest.table_number} Garson İstiyor!`, {
+                        toast.error(`🔔 Masa ${newRequest.table_no} Garson İstiyor!`, {
                             duration: 10000,
                         })
                     }
@@ -150,7 +150,7 @@ export default function OrdersPage() {
                         event: 'UPDATE',
                         schema: 'public',
                         table: 'service_requests',
-                        filter: `profile_id=eq.${user.id}`,
+                        filter: `cafe_id=eq.${user.id}`,
                     },
                     (payload) => {
                         if (payload.new.status === 'resolved') {
@@ -177,10 +177,10 @@ export default function OrdersPage() {
         return orders.filter((order) => statuses.includes(order.status as OrderStatus))
     }
 
-    const newOrders = filterByStatus(['received'])
+    const pendingOrders = filterByStatus(['pending'])
     const preparingOrders = filterByStatus(['preparing'])
-    const readyOrders = filterByStatus(['ready'])
-    const completedOrders = filterByStatus(['completed']).slice(0, 10)
+    const servedOrders = filterByStatus(['served'])
+    const paidOrders = filterByStatus(['paid']).slice(0, 10)
 
     if (loading) {
         return (
@@ -194,17 +194,17 @@ export default function OrdersPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Canlı Siparişler</h2>
-                <p className="text-muted-foreground">
+                <h1 className="text-2xl font-bold text-slate-800">Canlı Siparişler</h1>
+                <p className="text-slate-500 mt-1">
                     Gelen siparişleri ve garson çağrılarını takip edin.
                 </p>
             </div>
 
             {/* Service Requests Alert */}
             {serviceRequests.length > 0 && (
-                <Card className="border-orange-500 bg-orange-50">
+                <Card className="border-amber-200 bg-amber-50 shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-2 text-orange-800">
+                        <CardTitle className="flex items-center gap-2 text-amber-800">
                             <AlertTriangle className="h-5 w-5" />
                             Garson Çağrıları ({serviceRequests.length})
                         </CardTitle>
@@ -223,25 +223,30 @@ export default function OrdersPage() {
 
             {/* Kanban Board */}
             <div className="grid gap-6 lg:grid-cols-3">
-                {/* New Orders Column */}
+                {/* Pending Orders Column */}
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <Bell className="h-5 w-5 text-orange-500" />
-                        <h3 className="font-semibold text-lg">Yeni Siparişler</h3>
-                        {newOrders.length > 0 && (
-                            <Badge variant="destructive" className="animate-pulse">
-                                {newOrders.length}
+                    <div className="flex items-center gap-3 px-1">
+                        <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <Bell className="h-4 w-4 text-amber-600" />
+                        </div>
+                        <h3 className="font-semibold text-slate-800">Bekliyor</h3>
+                        {pendingOrders.length > 0 && (
+                            <Badge className="bg-amber-500 hover:bg-amber-600 animate-pulse">
+                                {pendingOrders.length}
                             </Badge>
                         )}
                     </div>
                     <ScrollArea className="h-[calc(100vh-350px)]">
                         <div className="space-y-3 pr-4">
-                            {newOrders.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">
-                                    Yeni sipariş yok
-                                </p>
+                            {pendingOrders.length === 0 ? (
+                                <div className="text-center py-12 px-4">
+                                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                        <Bell className="h-6 w-6 text-slate-400" />
+                                    </div>
+                                    <p className="text-sm text-slate-500">Bekleyen sipariş yok</p>
+                                </div>
                             ) : (
-                                newOrders.map((order) => (
+                                pendingOrders.map((order) => (
                                     <OrderCard
                                         key={order.id}
                                         order={order}
@@ -255,19 +260,24 @@ export default function OrdersPage() {
 
                 {/* Preparing Column */}
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <ChefHat className="h-5 w-5 text-blue-500" />
-                        <h3 className="font-semibold text-lg">Hazırlanıyor</h3>
+                    <div className="flex items-center gap-3 px-1">
+                        <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <ChefHat className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <h3 className="font-semibold text-slate-800">Hazırlanıyor</h3>
                         {preparingOrders.length > 0 && (
-                            <Badge variant="secondary">{preparingOrders.length}</Badge>
+                            <Badge className="bg-blue-500 hover:bg-blue-600">{preparingOrders.length}</Badge>
                         )}
                     </div>
                     <ScrollArea className="h-[calc(100vh-350px)]">
                         <div className="space-y-3 pr-4">
                             {preparingOrders.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">
-                                    Hazırlanan sipariş yok
-                                </p>
+                                <div className="text-center py-12 px-4">
+                                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                        <ChefHat className="h-6 w-6 text-slate-400" />
+                                    </div>
+                                    <p className="text-sm text-slate-500">Hazırlanan sipariş yok</p>
+                                </div>
                             ) : (
                                 preparingOrders.map((order) => (
                                     <OrderCard
@@ -281,23 +291,28 @@ export default function OrdersPage() {
                     </ScrollArea>
                 </div>
 
-                {/* Ready Column */}
+                {/* Served Column */}
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <h3 className="font-semibold text-lg">Hazır</h3>
-                        {readyOrders.length > 0 && (
-                            <Badge className="bg-green-500">{readyOrders.length}</Badge>
+                    <div className="flex items-center gap-3 px-1">
+                        <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <h3 className="font-semibold text-slate-800">Servis Edildi</h3>
+                        {servedOrders.length > 0 && (
+                            <Badge className="bg-emerald-500 hover:bg-emerald-600">{servedOrders.length}</Badge>
                         )}
                     </div>
                     <ScrollArea className="h-[calc(100vh-350px)]">
                         <div className="space-y-3 pr-4">
-                            {readyOrders.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">
-                                    Hazır sipariş yok
-                                </p>
+                            {servedOrders.length === 0 ? (
+                                <div className="text-center py-12 px-4">
+                                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                        <CheckCircle2 className="h-6 w-6 text-slate-400" />
+                                    </div>
+                                    <p className="text-sm text-slate-500">Servis edilmiş sipariş yok</p>
+                                </div>
                             ) : (
-                                readyOrders.map((order) => (
+                                servedOrders.map((order) => (
                                     <OrderCard
                                         key={order.id}
                                         order={order}
@@ -306,15 +321,15 @@ export default function OrdersPage() {
                                 ))
                             )}
 
-                            {completedOrders.length > 0 && (
+                            {paidOrders.length > 0 && (
                                 <>
                                     <div className="flex items-center gap-2 pt-4">
                                         <Clock className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm text-muted-foreground font-medium">
-                                            Son Tamamlananlar
+                                            💰 Son Ödenenler
                                         </span>
                                     </div>
-                                    {completedOrders.map((order) => (
+                                    {paidOrders.map((order) => (
                                         <OrderCard
                                             key={order.id}
                                             order={order}
