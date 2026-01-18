@@ -48,7 +48,7 @@ export function CallWaiterButton({ cafeId, initialTableNumber }: CallWaiterButto
             const { error } = await supabase
                 .from('service_requests')
                 .insert({
-                    cafe_id: cafeId,
+                    restaurant_id: cafeId, // CafeId passed prop is restaurantId
                     table_no: tableNumber.trim(),
                     status: 'pending',
                 })

@@ -1,6 +1,7 @@
 export interface Category {
     id: string
-    profile_id: string
+    profile_id: string // Deprecated, keeping for types until full refactor
+    restaurant_id: string
     name: string
     description: string | null
     image_url: string | null
@@ -12,7 +13,8 @@ export interface Category {
 
 export interface MenuItem {
     id: string
-    profile_id: string
+    profile_id: string // Deprecated
+    restaurant_id: string
     category_id: string
     name: string
     description: string | null
@@ -28,7 +30,8 @@ export interface MenuItem {
 
 export interface Order {
     id: string
-    profile_id: string
+    profile_id: string // Deprecated
+    restaurant_id: string
     customer_name: string | null
     table_number: string | null
     notes: string | null
@@ -78,4 +81,14 @@ export interface Restaurant {
     is_active: boolean
     created_at: string
     updated_at: string
+}
+
+export interface Review {
+    id: string
+    restaurant_id: string
+    customer_name: string | null
+    rating: number
+    comment: string | null
+    created_at: string
+    is_approved: boolean
 }

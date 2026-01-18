@@ -46,7 +46,7 @@ export function CartSheet({ cafeId, themeColor = '#f97316' }: CartSheetProps) {
             const { data: order, error: orderError } = await supabase
                 .from('orders')
                 .insert({
-                    profile_id: cafeId,
+                    restaurant_id: cafeId, // cafeId passed prop is the restaurantId
                     customer_name: customerName.trim() || null,
                     table_number: tableNumber.trim(),
                     total_amount: totalPrice,

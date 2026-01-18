@@ -1,199 +1,147 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import {
-    Wallet,
-    ShoppingCart,
-    Users,
-    TrendingUp,
-    Coffee,
-    Loader2
-} from 'lucide-react'
+import { Store, Plus, ExternalLink, Trash2 } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Restaurant } from '@/types/database'
 
-interface AnalyticsData {
-    totalRevenue: number
-    totalOrders: number
-    activeTables: number
-    avgOrderValue: number
-    bestSellers: { name: string; quantity: number; revenue: number }[]
-}
-
-export default function DashboardPage() {
-    const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+export default function OwnerDashboardPage() {
+    const [restaurants, setRestaurants] = useState<Restaurant[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null)
     const supabase = createClient()
+    const router = useRouter()
 
     useEffect(() => {
-        // Get selected restaurant from localStorage
-        const restaurantId = localStorage.getItem('selectedRestaurantId')
-        setSelectedRestaurantId(restaurantId)
+        fetchRestaurants()
     }, [])
 
-    const fetchAnalytics = useCallback(async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            const today = new Date()
-            const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString()
-            const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString()
-
-            // Query orders - using profile_id for now, will update to restaurant_id later
-            const { data: ordersData } = await supabase
-                .from('orders')
-                .select(`
-                    id,
-                    total_amount,
-                    table_number,
-                    status,
-                    order_items (
-                        menu_item_name,
-                        quantity,
-                        total_price
-                    )
-                `)
-                .eq('profile_id', user.id)
-                .gte('created_at', startOfDay)
-                .lte('created_at', endOfDay)
-                .neq('status', 'cancelled')
-
-            const orders = ordersData || []
-
-            const totalRevenue = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
-            const totalOrders = orders.length
-            const activeTables = new Set(orders.filter(o => o.status !== 'paid').map(o => o.table_number)).size
-            const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
-
-            const productMap = new Map<string, { quantity: number; revenue: number }>()
-            orders.forEach(order => {
-                order.order_items?.forEach((item: { menu_item_name: string; quantity: number; total_price: number }) => {
-                    const existing = productMap.get(item.menu_item_name) || { quantity: 0, revenue: 0 }
-                    productMap.set(item.menu_item_name, {
-                        quantity: existing.quantity + item.quantity,
-                        revenue: existing.revenue + item.total_price,
-                    })
-                })
-            })
-
-            const bestSellers = Array.from(productMap.entries())
-                .map(([name, data]) => ({ name, ...data }))
-                .sort((a, b) => b.quantity - a.quantity)
-                .slice(0, 5)
-
-            setAnalytics({ totalRevenue, totalOrders, activeTables, avgOrderValue, bestSellers })
-        } catch (error) {
-            console.error('Error:', error)
-        } finally {
-            setLoading(false)
+    const fetchRestaurants = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            router.push('/login')
+            return
         }
-    }, [supabase])
 
-    useEffect(() => {
-        fetchAnalytics()
-        const interval = setInterval(fetchAnalytics, 30000)
-        return () => clearInterval(interval)
-    }, [fetchAnalytics])
+        const { data } = await supabase
+            .from('restaurants')
+            .select('*')
+            .eq('owner_id', user.id)
+            .order('created_at', { ascending: false })
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-            </div>
-        )
+        setRestaurants(data || [])
+        setLoading(false)
     }
 
-    const stats = [
-        {
-            title: 'Günlük Ciro',
-            value: `₺${analytics?.totalRevenue.toFixed(0) || '0'}`,
-            icon: Wallet,
-        },
-        {
-            title: 'Siparişler',
-            value: analytics?.totalOrders || 0,
-            icon: ShoppingCart,
-        },
-        {
-            title: 'Aktif Masa',
-            value: analytics?.activeTables || 0,
-            icon: Users,
-        },
-        {
-            title: 'Ortalama',
-            value: `₺${analytics?.avgOrderValue.toFixed(0) || '0'}`,
-            icon: TrendingUp,
-        },
-    ]
+    const handleCreateRestaurant = async () => {
+        const name = window.prompt('Restoran Adı:')
+        if (!name) return
+
+        const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '')
+        const { data: { user } } = await supabase.auth.getUser()
+
+        const { error } = await supabase.from('restaurants').insert({
+            owner_id: user?.id,
+            name,
+            slug,
+            theme_color: '#f97316' // Default orange
+        })
+
+        if (error) {
+            alert('Hata: ' + error.message)
+        } else {
+            fetchRestaurants()
+        }
+    }
+
+    const handleDeleteRestaurant = async (id: string) => {
+        if (!window.confirm('Bu restoranı silmek istediğinize emin misiniz?')) return
+
+        const { error } = await supabase.from('restaurants').delete().eq('id', id)
+        if (error) {
+            alert('Hata: ' + error.message)
+        } else {
+            fetchRestaurants()
+        }
+    }
+
+    if (loading) {
+        return <div className="p-8 text-center text-slate-500">Yükleniyor...</div>
+    }
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-                <p className="text-slate-500 text-sm mt-1">
-                    {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Restoranlarım</h1>
+                    <p className="text-slate-500">İşletmelerinizi buradan yönetebilirsiniz.</p>
+                </div>
+                <button
+                    onClick={handleCreateRestaurant}
+                    className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors"
+                >
+                    <Plus className="h-4 w-4" />
+                    Yeni Restoran Ekle
+                </button>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, i) => (
-                    <div
-                        key={i}
-                        className="bg-white rounded-xl p-5 border border-slate-200"
-                    >
-                        <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center mb-3">
-                            <stat.icon className="h-5 w-5 text-slate-600" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {restaurants.map((restaurant) => (
+                    <div key={restaurant.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="h-32 bg-slate-100 flex items-center justify-center relative">
+                            {restaurant.logo_url ? (
+                                <img src={restaurant.logo_url} alt={restaurant.name} className="h-full w-full object-cover" />
+                            ) : (
+                                <Store className="h-12 w-12 text-slate-300" />
+                            )}
+                            <div className="absolute top-2 right-2 flex gap-2">
+                                <button
+                                    onClick={() => handleDeleteRestaurant(restaurant.id)}
+                                    className="p-2 bg-white/90 rounded-full text-red-600 hover:text-red-700 hover:bg-white shadow-sm"
+                                    title="Sil"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
-                        <p className="text-slate-500 text-sm">{stat.title}</p>
-                        <p className="text-2xl font-semibold text-slate-900 mt-1">{stat.value}</p>
+                        <div className="p-5">
+                            <h3 className="font-semibold text-lg text-slate-900">{restaurant.name}</h3>
+                            <p className="text-sm text-slate-500 mb-4 truncate">{restaurant.description || 'Açıklama yok'}</p>
+
+                            <div className="flex gap-3">
+                                <Link
+                                    href={`/dashboard/${restaurant.id}`}
+                                    className="flex-1 text-center bg-slate-900 text-white py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+                                >
+                                    Yönet
+                                </Link>
+                                <Link
+                                    href={`/menu/${restaurant.slug}`}
+                                    target="_blank"
+                                    className="flex items-center justify-center w-10 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors"
+                                    title="Canlı Menü"
+                                >
+                                    <ExternalLink className="h-4 w-4" />
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 ))}
-            </div>
 
-            {/* Best Sellers */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="p-5 border-b border-slate-200">
-                    <h2 className="text-lg font-semibold text-slate-900">En Çok Satanlar</h2>
-                    <p className="text-sm text-slate-500">Bugünün en popüler ürünleri</p>
-                </div>
-
-                <div className="p-4">
-                    {analytics?.bestSellers && analytics.bestSellers.length > 0 ? (
-                        <div className="space-y-2">
-                            {analytics.bestSellers.map((item, index) => (
-                                <div
-                                    key={item.name}
-                                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                                >
-                                    {/* Rank */}
-                                    <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-sm font-medium">
-                                        {index + 1}
-                                    </div>
-
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-slate-900 truncate">{item.name}</p>
-                                        <p className="text-sm text-slate-500">{item.quantity} adet</p>
-                                    </div>
-
-                                    {/* Revenue */}
-                                    <div className="text-right">
-                                        <p className="font-medium text-slate-900">₺{item.revenue.toFixed(0)}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12">
-                            <Coffee className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                            <p className="text-slate-500">Bugün henüz sipariş yok</p>
-                            <p className="text-sm text-slate-400 mt-1">İlk siparişiniz geldiğinde burada görünecek</p>
-                        </div>
-                    )}
-                </div>
+                {restaurants.length === 0 && (
+                    <div className="col-span-full text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <Store className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                        <h3 className="font-medium text-slate-900">Henüz restoranınız yok</h3>
+                        <p className="text-slate-500 text-sm mt-1 mb-4">İlk restoranınızı oluşturarak satış yapmaya başlayın.</p>
+                        <button
+                            onClick={handleCreateRestaurant}
+                            className="text-orange-600 font-medium hover:text-orange-700"
+                        >
+                            Restoran Oluştur
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )
