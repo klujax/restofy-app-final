@@ -4,21 +4,30 @@ export const dynamic = 'force-dynamic'
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white p-4 text-center">
-      <div className="max-w-xl">
-        <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl mb-6">
-          Restofy Kafe
+    <main className="min-h-screen bg-white flex items-center justify-center p-6">
+      <div className="w-full max-w-sm text-center">
+        {/* Logo */}
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">
+          Restofy
         </h1>
-        <p className="text-lg text-slate-600 mb-8">
-          Kafeler için yeni nesil QR menü ve sipariş yönetim sistemi.
+        <p className="text-slate-500 mb-12">
+          Restoran Yönetim Sistemi
         </p>
 
-        <div className="flex justify-center gap-4">
+        {/* Buttons */}
+        <div className="space-y-4">
+          <Link
+            href="/register"
+            className="block w-full py-4 px-6 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            Kayıt Ol
+          </Link>
+
           <Link
             href="/login"
-            className="rounded-xl bg-orange-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all hover:bg-orange-700 hover:shadow-xl"
+            className="block w-full py-4 px-6 bg-white text-slate-900 font-medium rounded-lg border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors"
           >
-            Yönetici Girişi
+            Üye Girişi
           </Link>
         </div>
       </div>

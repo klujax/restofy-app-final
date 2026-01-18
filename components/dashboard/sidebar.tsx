@@ -11,70 +11,217 @@ import {
     QrCode,
     ClipboardList,
     Settings,
-    Shield,
     ChevronRight,
     Menu,
     X,
-    Zap
+    Plus,
+    Store,
+    ChevronDown,
+    Check
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+interface Restaurant {
+    id: string
+    name: string
+    location: string | null
+    slug: string
+}
+
 const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', color: 'from-violet-500 to-purple-600' },
-    { icon: ClipboardList, label: 'Siparişler', href: '/dashboard/orders', color: 'from-blue-500 to-cyan-600' },
-    { icon: UtensilsCrossed, label: 'Menü', href: '/dashboard/menu', color: 'from-orange-500 to-red-600' },
-    { icon: QrCode, label: 'QR Kodlar', href: '/dashboard/qr', color: 'from-emerald-500 to-teal-600' },
-    { icon: Settings, label: 'Ayarlar', href: '/dashboard/settings', color: 'from-slate-500 to-slate-600' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+    { icon: ClipboardList, label: 'Siparişler', href: '/dashboard/orders' },
+    { icon: UtensilsCrossed, label: 'Menü', href: '/dashboard/menu' },
+    { icon: QrCode, label: 'QR Kodlar', href: '/dashboard/qr' },
+    { icon: Settings, label: 'Ayarlar', href: '/dashboard/settings' },
 ]
 
 export function DashboardSidebar() {
     const pathname = usePathname()
-    const [businessName, setBusinessName] = useState('')
-    const [themeColor, setThemeColor] = useState('#f97316')
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+    const [restaurants, setRestaurants] = useState<Restaurant[]>([])
+    const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null)
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+    const [showNewRestaurantForm, setShowNewRestaurantForm] = useState(false)
+    const [newRestaurantName, setNewRestaurantName] = useState('')
+    const [newRestaurantLocation, setNewRestaurantLocation] = useState('')
+    const [loading, setLoading] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
-        const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+        fetchRestaurants()
+    }, [])
 
-            const { data } = await supabase
-                .from('profiles')
-                .select('business_name, theme_color, role')
-                .eq('id', user.id)
-                .single()
+    const fetchRestaurants = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-            if (data) {
-                setBusinessName(data.business_name || '')
-                setThemeColor(data.theme_color || '#f97316')
-                setIsSuperAdmin(data.role === 'super_admin')
-            }
+        const { data } = await supabase
+            .from('restaurants')
+            .select('id, name, location, slug')
+            .eq('owner_id', user.id)
+            .order('created_at', { ascending: true })
+
+        if (data && data.length > 0) {
+            setRestaurants(data)
+            // Get saved selection from localStorage or use first restaurant
+            const savedId = localStorage.getItem('selectedRestaurantId')
+            const saved = data.find(r => r.id === savedId)
+            setSelectedRestaurant(saved || data[0])
         }
-        fetchProfile()
-    }, [supabase])
+    }
+
+    const selectRestaurant = (restaurant: Restaurant) => {
+        setSelectedRestaurant(restaurant)
+        localStorage.setItem('selectedRestaurantId', restaurant.id)
+        setDropdownOpen(false)
+    }
+
+    const createRestaurant = async () => {
+        if (!newRestaurantName.trim()) return
+        setLoading(true)
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            setLoading(false)
+            return
+        }
+
+        const slug = `${newRestaurantName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+
+        const { data, error } = await supabase
+            .from('restaurants')
+            .insert({
+                owner_id: user.id,
+                name: newRestaurantName,
+                location: newRestaurantLocation || null,
+                slug: slug
+            })
+            .select()
+            .single()
+
+        if (!error && data) {
+            setRestaurants([...restaurants, data])
+            setSelectedRestaurant(data)
+            localStorage.setItem('selectedRestaurantId', data.id)
+            setNewRestaurantName('')
+            setNewRestaurantLocation('')
+            setShowNewRestaurantForm(false)
+        }
+
+        setLoading(false)
+    }
 
     const SidebarContent = () => (
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col bg-slate-50 border-r border-slate-200">
             {/* Logo Header */}
-            <div className="p-6">
-                <Link href="/dashboard" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
-                    <div className="relative">
-                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/25">
-                            <Zap className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-slate-900" />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-xl text-white">Restofy</h1>
-                        <p className="text-xs text-slate-500 truncate max-w-[140px]">{businessName}</p>
-                    </div>
+            <div className="p-4 border-b border-slate-200">
+                <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
+                    <h1 className="font-bold text-xl text-slate-900">Restofy</h1>
                 </Link>
             </div>
 
+            {/* Restaurant Selector */}
+            <div className="p-3 border-b border-slate-200">
+                <div className="relative">
+                    <button
+                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                        className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                                <Store className="h-4 w-4 text-white" />
+                            </div>
+                            <div className="text-left">
+                                {selectedRestaurant ? (
+                                    <>
+                                        <p className="font-medium text-slate-900 text-sm">{selectedRestaurant.name}</p>
+                                        {selectedRestaurant.location && (
+                                            <p className="text-xs text-slate-500">{selectedRestaurant.location}</p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-slate-500">Restoran seçin</p>
+                                )}
+                            </div>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform", dropdownOpen && "rotate-180")} />
+                    </button>
+
+                    {/* Dropdown */}
+                    {dropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                            {restaurants.map((restaurant) => (
+                                <button
+                                    key={restaurant.id}
+                                    onClick={() => selectRestaurant(restaurant)}
+                                    className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="text-left">
+                                        <p className="font-medium text-slate-900 text-sm">{restaurant.name}</p>
+                                        {restaurant.location && (
+                                            <p className="text-xs text-slate-500">{restaurant.location}</p>
+                                        )}
+                                    </div>
+                                    {selectedRestaurant?.id === restaurant.id && (
+                                        <Check className="h-4 w-4 text-slate-900" />
+                                    )}
+                                </button>
+                            ))}
+
+                            {/* Add New Restaurant Button */}
+                            <button
+                                onClick={() => {
+                                    setDropdownOpen(false)
+                                    setShowNewRestaurantForm(true)
+                                }}
+                                className="w-full flex items-center gap-2 p-3 text-slate-600 hover:bg-slate-50 border-t border-slate-100 transition-colors"
+                            >
+                                <Plus className="h-4 w-4" />
+                                <span className="text-sm">Yeni Restoran Ekle</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* New Restaurant Form */}
+                {showNewRestaurantForm && (
+                    <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg space-y-3">
+                        <input
+                            type="text"
+                            placeholder="Restoran Adı"
+                            value={newRestaurantName}
+                            onChange={(e) => setNewRestaurantName(e.target.value)}
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Konum (örn: Kadıköy)"
+                            value={newRestaurantLocation}
+                            onChange={(e) => setNewRestaurantLocation(e.target.value)}
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowNewRestaurantForm(false)}
+                                className="flex-1 h-10 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                            >
+                                İptal
+                            </button>
+                            <button
+                                onClick={createRestaurant}
+                                disabled={loading || !newRestaurantName.trim()}
+                                className="flex-1 h-10 text-sm bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
+                            >
+                                {loading ? 'Ekleniyor...' : 'Ekle'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-2">
+            <nav className="flex-1 p-3 space-y-1">
                 {navItems.map((item) => {
                     const isActive = item.href === '/dashboard'
                         ? pathname === '/dashboard'
@@ -86,75 +233,32 @@ export function DashboardSidebar() {
                             href={item.href}
                             onClick={() => setMobileOpen(false)}
                             className={cn(
-                                'group relative flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium transition-all duration-300',
+                                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors',
                                 isActive
-                                    ? 'text-white'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                             )}
                         >
-                            {/* Active Background */}
-                            {isActive && (
-                                <div className={cn(
-                                    "absolute inset-0 rounded-2xl bg-gradient-to-r opacity-90",
-                                    item.color
-                                )} />
-                            )}
-
-                            {/* Icon */}
-                            <div className={cn(
-                                "relative z-10 h-9 w-9 rounded-xl flex items-center justify-center transition-all",
-                                isActive
-                                    ? "bg-white/20"
-                                    : "bg-slate-800/50 group-hover:bg-slate-700/50"
-                            )}>
-                                <item.icon className="h-5 w-5" />
-                            </div>
-
-                            {/* Label */}
-                            <span className="relative z-10 flex-1">{item.label}</span>
-
-                            {/* Arrow */}
-                            {isActive && (
-                                <ChevronRight className="relative z-10 h-4 w-4" />
-                            )}
+                            <item.icon className="h-5 w-5" />
+                            <span>{item.label}</span>
+                            {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
                         </Link>
                     )
                 })}
-
-                {/* Super Admin */}
-                {isSuperAdmin && (
-                    <Link
-                        href="/admin"
-                        onClick={() => setMobileOpen(false)}
-                        className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 hover:from-emerald-500/30 hover:to-teal-500/30 transition-all mt-4"
-                    >
-                        <div className="h-9 w-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                            <Shield className="h-5 w-5" />
-                        </div>
-                        <span className="flex-1">Admin Panel</span>
-                        <ChevronRight className="h-4 w-4" />
-                    </Link>
-                )}
             </nav>
 
             {/* Footer */}
-            <div className="p-4 mx-4 mb-4 rounded-2xl bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20">
-                <div className="flex items-center gap-3">
-                    <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg"
-                        style={{
-                            background: `linear-gradient(135deg, ${themeColor}, ${themeColor}dd)`,
-                            boxShadow: `0 4px 20px ${themeColor}40`
-                        }}
-                    >
-                        {businessName.charAt(0).toUpperCase() || 'K'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{businessName || 'Kafe'}</p>
-                        <p className="text-xs text-orange-400/80">Pro Üye ⭐</p>
+            {selectedRestaurant && (
+                <div className="p-3 border-t border-slate-200">
+                    <div className="p-3 bg-white rounded-lg border border-slate-200">
+                        <p className="text-xs text-slate-500">Aktif Restoran</p>
+                        <p className="font-medium text-slate-900 text-sm">{selectedRestaurant.name}</p>
+                        {selectedRestaurant.location && (
+                            <p className="text-xs text-slate-500">{selectedRestaurant.location}</p>
+                        )}
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 
@@ -164,7 +268,7 @@ export function DashboardSidebar() {
             <Button
                 variant="ghost"
                 size="icon"
-                className="fixed top-4 left-4 z-50 lg:hidden h-12 w-12 rounded-2xl bg-slate-800/90 backdrop-blur-sm text-white border border-white/10"
+                className="fixed top-4 left-4 z-50 lg:hidden h-10 w-10 rounded-lg bg-white border border-slate-200 text-slate-900"
                 onClick={() => setMobileOpen(!mobileOpen)}
             >
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -173,21 +277,21 @@ export function DashboardSidebar() {
             {/* Mobile Overlay */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                    className="fixed inset-0 bg-black/20 z-40 lg:hidden"
                     onClick={() => setMobileOpen(false)}
                 />
             )}
 
             {/* Mobile Sidebar */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-50 w-72 bg-slate-900/95 backdrop-blur-xl border-r border-white/5 transform transition-transform duration-300 lg:hidden",
+                "fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:hidden",
                 mobileOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <SidebarContent />
             </aside>
 
             {/* Desktop Sidebar */}
-            <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-72 lg:block bg-slate-900/80 backdrop-blur-xl border-r border-white/5">
+            <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-72 lg:block">
                 <SidebarContent />
             </aside>
         </>

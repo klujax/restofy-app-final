@@ -11,35 +11,22 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bell, LogOut, User, Settings, ChevronDown, Sparkles } from 'lucide-react'
+import { LogOut, User, Settings, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function DashboardTopbar() {
-    const [businessName, setBusinessName] = useState('')
     const [email, setEmail] = useState('')
-    const [themeColor, setThemeColor] = useState('#f97316')
     const router = useRouter()
     const supabase = createClient()
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            setEmail(user.email || '')
-
-            const { data } = await supabase
-                .from('profiles')
-                .select('business_name, theme_color')
-                .eq('id', user.id)
-                .single()
-
-            if (data) {
-                setBusinessName(data.business_name || '')
-                setThemeColor(data.theme_color || '#f97316')
+            if (user) {
+                setEmail(user.email || '')
             }
         }
-        fetchProfile()
+        fetchUser()
     }, [supabase])
 
     const handleLogout = async () => {
@@ -50,78 +37,52 @@ export function DashboardTopbar() {
     }
 
     return (
-        <header className="sticky top-0 z-30 backdrop-blur-xl bg-slate-900/50 border-b border-white/5">
-            <div className="flex h-16 items-center justify-between px-4 lg:px-8">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200">
+            <div className="flex h-14 items-center justify-between px-4 lg:px-6">
                 {/* Left spacer for mobile menu */}
                 <div className="w-12 lg:w-0" />
 
-                {/* Center - Welcome Message */}
-                <div className="hidden md:flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-orange-400" />
-                    <span className="text-sm text-slate-400">
-                        Hoş geldin, <span className="text-white font-medium">{businessName}</span>
-                    </span>
-                </div>
-
                 {/* Right - Actions */}
-                <div className="flex items-center gap-2">
-                    {/* Notifications */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="relative h-10 w-10 rounded-xl text-slate-400 hover:text-white hover:bg-white/5"
-                    >
-                        <Bell className="h-5 w-5" />
-                        <span
-                            className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full animate-pulse"
-                            style={{ backgroundColor: themeColor }}
-                        />
-                    </Button>
-
+                <div className="flex items-center gap-2 ml-auto">
                     {/* User Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="flex items-center gap-2 h-10 px-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/5"
+                                className="flex items-center gap-2 h-9 px-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                             >
-                                <div
-                                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-lg"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${themeColor}, ${themeColor}cc)`,
-                                    }}
-                                >
-                                    {businessName.charAt(0).toUpperCase() || 'K'}
+                                <div className="h-7 w-7 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-medium">
+                                    {email.charAt(0).toUpperCase() || 'U'}
                                 </div>
-                                <ChevronDown className="h-4 w-4 text-slate-500" />
+                                <span className="hidden sm:inline text-sm">{email}</span>
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                             align="end"
-                            className="w-56 bg-slate-900 border-white/10 text-white rounded-xl p-2"
+                            className="w-56 bg-white border-slate-200 rounded-lg p-1"
                         >
-                            <div className="px-3 py-2 mb-2">
-                                <p className="font-semibold">{businessName}</p>
-                                <p className="text-xs text-slate-400">{email}</p>
+                            <div className="px-3 py-2 mb-1">
+                                <p className="text-sm font-medium text-slate-900">{email}</p>
                             </div>
-                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuSeparator className="bg-slate-100" />
                             <DropdownMenuItem
-                                className="cursor-pointer rounded-lg hover:bg-white/5 focus:bg-white/5 py-2.5"
+                                className="cursor-pointer rounded-md hover:bg-slate-100 py-2"
                                 onClick={() => router.push('/dashboard/settings')}
                             >
-                                <Settings className="mr-2 h-4 w-4 text-slate-400" />
+                                <Settings className="mr-2 h-4 w-4 text-slate-500" />
                                 Ayarlar
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                className="cursor-pointer rounded-lg hover:bg-white/5 focus:bg-white/5 py-2.5"
+                                className="cursor-pointer rounded-md hover:bg-slate-100 py-2"
                                 onClick={() => router.push('/dashboard/settings/profile')}
                             >
-                                <User className="mr-2 h-4 w-4 text-slate-400" />
+                                <User className="mr-2 h-4 w-4 text-slate-500" />
                                 Profil
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuSeparator className="bg-slate-100" />
                             <DropdownMenuItem
-                                className="cursor-pointer rounded-lg text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400 py-2.5"
+                                className="cursor-pointer rounded-md text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600 py-2"
                                 onClick={handleLogout}
                             >
                                 <LogOut className="mr-2 h-4 w-4" />

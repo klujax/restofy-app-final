@@ -62,3 +62,20 @@ export interface Profile {
     created_at: string
     updated_at: string
 }
+
+export interface Restaurant {
+    id: string
+    owner_id: string
+    name: string
+    location: string | null
+    slug: string
+    description: string | null
+    logo_url: string | null
+    address: string | null
+    phone: string | null
+    currency: string
+    theme_color: string
+    is_active: boolean
+    created_at: string
+    updated_at: string
+}
