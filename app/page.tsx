@@ -1,38 +1,27 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Coffee, ArrowRight } from "lucide-react"
+import Link from "next/link";
+
+export const dynamic = 'force-dynamic'
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="text-center max-w-md">
-        {/* Logo */}
-        <div className="mx-auto mb-8 h-20 w-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
-          <Coffee className="h-10 w-10 text-white" />
-        </div>
-
-        {/* Title */}
-        <h1 className="text-4xl font-bold text-slate-800 mb-3">Restofy</h1>
-        <p className="text-slate-500 mb-10 text-lg">
-          Kafeniz için dijital menü ve sipariş yönetimi
+    <main className="flex min-h-screen flex-col items-center justify-center bg-white p-4 text-center">
+      <div className="max-w-xl">
+        <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl mb-6">
+          Restofy Kafe
+        </h1>
+        <p className="text-lg text-slate-600 mb-8">
+          Kafeler için yeni nesil QR menü ve sipariş yönetim sistemi.
         </p>
 
-        {/* CTA Button */}
-        <Link href="/login">
-          <Button
-            size="lg"
-            className="w-full max-w-xs h-14 text-lg font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 gap-2"
+        <div className="flex justify-center gap-4">
+          <Link
+            href="/login"
+            className="rounded-xl bg-orange-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all hover:bg-orange-700 hover:shadow-xl"
           >
-            Kafe Girişi
-            <ArrowRight className="h-5 w-5" />
-          </Button>
-        </Link>
-
-        {/* Footer */}
-        <p className="mt-8 text-sm text-slate-400">
-          Kafe sahipleri için tasarlandı
-        </p>
+            Yönetici Girişi
+          </Link>
+        </div>
       </div>
-    </div>
-  )
+    </main>
+  );
 }
