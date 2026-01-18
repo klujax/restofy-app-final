@@ -15,6 +15,18 @@ export default async function DashboardLayout({
         redirect('/login')
     }
 
+    // Check if user has completed setup (has business_name)
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('business_name')
+        .eq('id', user.id)
+        .single()
+
+    // If user doesn't have a business name, they need to complete setup
+    if (!profile?.business_name) {
+        redirect('/setup')
+    }
+
     return (
         <div className="min-h-screen bg-slate-50">
             <div className="grid w-full lg:grid-cols-[280px_1fr]">
