@@ -12,7 +12,8 @@ import {
     ClipboardList,
     Settings,
     User,
-    ChevronRight
+    ChevronRight,
+    Shield
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
@@ -32,6 +33,7 @@ export function SidebarContent({ onLinkClick }: SidebarContentProps) {
     const pathname = usePathname()
     const [businessName, setBusinessName] = useState('')
     const [logoUrl, setLogoUrl] = useState<string | null>(null)
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
@@ -41,13 +43,14 @@ export function SidebarContent({ onLinkClick }: SidebarContentProps) {
 
             const { data } = await supabase
                 .from('profiles')
-                .select('business_name, logo_url')
+                .select('business_name, logo_url, role')
                 .eq('id', user.id)
                 .single()
 
             if (data) {
                 setBusinessName(data.business_name || '')
                 setLogoUrl(data.logo_url)
+                setIsSuperAdmin(data.role === 'super_admin')
             }
         }
         fetchProfile()
@@ -94,6 +97,22 @@ export function SidebarContent({ onLinkClick }: SidebarContentProps) {
                         </Link>
                     )
                 })}
+
+                {/* Super Admin Link */}
+                {isSuperAdmin && (
+                    <>
+                        <div className="my-4 border-t border-slate-100" />
+                        <Link
+                            href="/admin"
+                            onClick={onLinkClick}
+                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 bg-slate-900 text-white hover:bg-slate-800"
+                        >
+                            <Shield className="h-5 w-5 text-emerald-400" />
+                            <span className="flex-1">Super Admin</span>
+                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                        </Link>
+                    </>
+                )}
             </nav>
 
             {/* Profile Section */}
