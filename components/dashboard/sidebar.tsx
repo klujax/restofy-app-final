@@ -10,30 +10,33 @@ import {
     UtensilsCrossed,
     QrCode,
     ClipboardList,
-    Settings,
+    Store,
     User,
+    Shield,
     ChevronRight,
-    Shield
+    Menu,
+    X
 } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 
-const sidebarItems = [
+const mainNavItems = [
     { icon: LayoutDashboard, label: 'Genel Bakış', href: '/dashboard' },
-    { icon: UtensilsCrossed, label: 'Menü Yöneticisi', href: '/dashboard/menu' },
-    { icon: QrCode, label: 'QR Kod', href: '/dashboard/qr' },
     { icon: ClipboardList, label: 'Siparişler', href: '/dashboard/orders' },
-    { icon: Settings, label: 'Ayarlar', href: '/dashboard/settings' },
+    { icon: UtensilsCrossed, label: 'Menü Yönetimi', href: '/dashboard/menu' },
+    { icon: QrCode, label: 'QR Kodlar', href: '/dashboard/qr' },
 ]
 
-interface SidebarContentProps {
-    onLinkClick?: () => void
-}
+const settingsNavItems = [
+    { icon: Store, label: 'İşletme Ayarları', href: '/dashboard/settings/shop' },
+    { icon: User, label: 'Hesap Ayarları', href: '/dashboard/settings/profile' },
+]
 
-export function SidebarContent({ onLinkClick }: SidebarContentProps) {
+export function DashboardSidebar() {
     const pathname = usePathname()
     const [businessName, setBusinessName] = useState('')
-    const [logoUrl, setLogoUrl] = useState<string | null>(null)
+    const [themeColor, setThemeColor] = useState('#f97316')
     const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+    const [mobileOpen, setMobileOpen] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
@@ -43,112 +46,183 @@ export function SidebarContent({ onLinkClick }: SidebarContentProps) {
 
             const { data } = await supabase
                 .from('profiles')
-                .select('business_name, logo_url, role')
+                .select('business_name, theme_color, role')
                 .eq('id', user.id)
                 .single()
 
             if (data) {
                 setBusinessName(data.business_name || '')
-                setLogoUrl(data.logo_url)
+                setThemeColor(data.theme_color || '#f97316')
                 setIsSuperAdmin(data.role === 'super_admin')
             }
         }
         fetchProfile()
     }, [supabase])
 
-    const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(businessName || 'Cafe')}&background=6366f1&color=fff&size=64`
-
-    return (
-        <div className="flex h-full flex-col bg-white">
+    const SidebarContent = () => (
+        <div className="flex h-full flex-col">
             {/* Logo */}
-            <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-6">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <div className="flex h-20 items-center gap-3 px-6 border-b border-white/5">
+                <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg"
+                    style={{ backgroundColor: themeColor }}
+                >
                     <span className="text-white font-bold text-lg">R</span>
                 </div>
-                <Link href="/dashboard" className="font-bold text-xl text-slate-800" onClick={onLinkClick}>
-                    Restofy
-                </Link>
+                <div>
+                    <Link href="/dashboard" className="font-bold text-lg text-white" onClick={() => setMobileOpen(false)}>
+                        Restofy
+                    </Link>
+                    <p className="text-xs text-slate-500 truncate max-w-[140px]">{businessName}</p>
+                </div>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1">
-                {sidebarItems.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={onLinkClick}
-                            className={cn(
-                                'group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
-                                isActive
-                                    ? 'bg-indigo-50 text-indigo-600'
-                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                            )}
-                        >
-                            <item.icon className={cn(
-                                "h-5 w-5 transition-colors",
-                                isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"
-                            )} />
-                            <span className="flex-1">{item.label}</span>
-                            {isActive && (
-                                <ChevronRight className="h-4 w-4 text-indigo-400" />
-                            )}
-                        </Link>
-                    )
-                })}
+            {/* Main Navigation */}
+            <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+                {/* Main Menu */}
+                <div className="space-y-1">
+                    <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                        Ana Menü
+                    </p>
+                    {mainNavItems.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setMobileOpen(false)}
+                                className={cn(
+                                    'group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                                    isActive
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                )}
+                                style={isActive ? {
+                                    boxShadow: `0 0 20px ${themeColor}20`,
+                                    borderLeft: `3px solid ${themeColor}`
+                                } : {}}
+                            >
+                                <item.icon className={cn(
+                                    "h-5 w-5 transition-colors",
+                                    isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                                )} />
+                                <span className="flex-1">{item.label}</span>
+                                {isActive && (
+                                    <ChevronRight className="h-4 w-4" style={{ color: themeColor }} />
+                                )}
+                            </Link>
+                        )
+                    })}
+                </div>
+
+                {/* Settings Menu */}
+                <div className="space-y-1">
+                    <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                        Ayarlar
+                    </p>
+                    {settingsNavItems.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setMobileOpen(false)}
+                                className={cn(
+                                    'group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                                    isActive
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                )}
+                                style={isActive ? {
+                                    boxShadow: `0 0 20px ${themeColor}20`,
+                                    borderLeft: `3px solid ${themeColor}`
+                                } : {}}
+                            >
+                                <item.icon className={cn(
+                                    "h-5 w-5 transition-colors",
+                                    isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                                )} />
+                                <span className="flex-1">{item.label}</span>
+                                {isActive && (
+                                    <ChevronRight className="h-4 w-4" style={{ color: themeColor }} />
+                                )}
+                            </Link>
+                        )
+                    })}
+                </div>
 
                 {/* Super Admin Link */}
                 {isSuperAdmin && (
-                    <>
-                        <div className="my-4 border-t border-slate-100" />
+                    <div className="space-y-1">
+                        <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Yönetim
+                        </p>
                         <Link
                             href="/admin"
-                            onClick={onLinkClick}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 bg-slate-900 text-white hover:bg-slate-800"
+                            onClick={() => setMobileOpen(false)}
+                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                         >
-                            <Shield className="h-5 w-5 text-emerald-400" />
+                            <Shield className="h-5 w-5" />
                             <span className="flex-1">Super Admin</span>
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                            <ChevronRight className="h-4 w-4" />
                         </Link>
-                    </>
+                    </div>
                 )}
             </nav>
 
-            {/* Profile Section */}
-            <div className="border-t border-slate-100 p-4">
-                <Link
-                    href="/dashboard/settings"
-                    onClick={onLinkClick}
-                    className="flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:bg-slate-50"
-                >
-                    <Avatar className="h-10 w-10 ring-2 ring-slate-100">
-                        <AvatarImage
-                            src={logoUrl || fallbackAvatar}
-                            alt={businessName}
-                            onError={(e) => {
-                                const target = e.target as HTMLImageElement
-                                target.src = fallbackAvatar
-                            }}
-                        />
-                        <AvatarFallback className="bg-indigo-100 text-indigo-600">
-                            <User className="h-5 w-5" />
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                        <p className="truncate font-semibold text-slate-800">{businessName || 'Kafe Adı'}</p>
-                        <p className="text-xs text-slate-500">Profil Ayarları</p>
+            {/* Footer */}
+            <div className="border-t border-white/5 p-4">
+                <div className="flex items-center gap-3 px-2">
+                    <div
+                        className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                        style={{ backgroundColor: themeColor }}
+                    >
+                        {businessName.charAt(0).toUpperCase() || 'K'}
                     </div>
-                </Link>
+                    <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-medium text-white">{businessName || 'Kafe'}</p>
+                        <p className="text-xs text-slate-500">Pro Plan</p>
+                    </div>
+                </div>
             </div>
         </div>
     )
-}
 
-export function DesktopSidebar() {
     return (
-        <aside className="hidden lg:block h-screen sticky top-0 border-r border-slate-200 bg-white">
-            <SidebarContent />
-        </aside>
+        <>
+            {/* Mobile Menu Button */}
+            <Button
+                variant="ghost"
+                size="icon"
+                className="fixed top-4 left-4 z-50 lg:hidden bg-white/10 backdrop-blur-sm text-white"
+                onClick={() => setMobileOpen(!mobileOpen)}
+            >
+                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+
+            {/* Mobile Overlay */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
+
+            {/* Mobile Sidebar */}
+            <aside className={cn(
+                "fixed inset-y-0 left-0 z-50 w-72 bg-[#0f0f0f] border-r border-white/5 transform transition-transform duration-300 lg:hidden",
+                mobileOpen ? "translate-x-0" : "-translate-x-full"
+            )}>
+                <SidebarContent />
+            </aside>
+
+            {/* Desktop Sidebar */}
+            <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-72 lg:block bg-[#0f0f0f] border-r border-white/5">
+                <SidebarContent />
+            </aside>
+        </>
     )
 }
+
+// Keep old export for backward compatibility
+export { DashboardSidebar as DesktopSidebar }

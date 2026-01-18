@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
     DollarSign,
@@ -13,7 +13,8 @@ import {
     Coffee,
     Loader2,
     Calendar,
-    ArrowUpRight
+    ArrowUpRight,
+    Sparkles
 } from 'lucide-react'
 
 interface AnalyticsData {
@@ -27,12 +28,28 @@ interface AnalyticsData {
 export default function DashboardPage() {
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [businessName, setBusinessName] = useState('')
+    const [themeColor, setThemeColor] = useState('#f97316')
+    const [currency, setCurrency] = useState('₺')
     const supabase = createClient()
 
     const fetchAnalytics = useCallback(async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
+
+            // Fetch profile data
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('business_name, theme_color, currency')
+                .eq('id', user.id)
+                .single()
+
+            if (profile) {
+                setBusinessName(profile.business_name || '')
+                setThemeColor(profile.theme_color || '#f97316')
+                setCurrency(profile.currency || '₺')
+            }
 
             const today = new Date()
             const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString()
@@ -105,7 +122,7 @@ export default function DashboardPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
             </div>
         )
     }
@@ -122,53 +139,62 @@ export default function DashboardPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Genel Bakış</h1>
-                    <p className="text-slate-500 flex items-center gap-2 mt-1">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent flex items-center gap-2">
+                        <Sparkles className="h-6 w-6 text-orange-500" />
+                        Hoş geldin!
+                    </h1>
+                    <p className="text-slate-400 flex items-center gap-2 mt-1">
                         <Calendar className="h-4 w-4" />
                         {today}
                     </p>
                 </div>
-                <Badge variant="outline" className="w-fit text-slate-500 border-slate-200 bg-white">
-                    <span className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse" />
+                <Badge
+                    className="w-fit border-0"
+                    style={{
+                        backgroundColor: `${themeColor}20`,
+                        color: themeColor
+                    }}
+                >
+                    <span className="h-2 w-2 rounded-full mr-2 animate-pulse" style={{ backgroundColor: themeColor }} />
                     Canlı güncelleme
                 </Badge>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Revenue Card */}
-                <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-600">
+                        <CardTitle className="text-sm font-medium text-slate-400">
                             Günlük Ciro
                         </CardTitle>
-                        <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                            <DollarSign className="h-5 w-5 text-emerald-600" />
+                        <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                            <DollarSign className="h-5 w-5 text-emerald-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-800">
-                            ₺{analytics?.totalRevenue.toFixed(2) || '0.00'}
+                        <div className="text-2xl font-bold text-white">
+                            {currency}{analytics?.totalRevenue.toFixed(2) || '0.00'}
                         </div>
                         <div className="flex items-center gap-1 mt-2">
-                            <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                            <span className="text-xs text-emerald-600 font-medium">Bugün</span>
+                            <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+                            <span className="text-xs text-emerald-400 font-medium">Bugün</span>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Orders Card */}
-                <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-600">
+                        <CardTitle className="text-sm font-medium text-slate-400">
                             Toplam Sipariş
                         </CardTitle>
-                        <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                            <ShoppingBag className="h-5 w-5 text-blue-600" />
+                        <div className="h-10 w-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                            <ShoppingBag className="h-5 w-5 text-blue-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-800">
+                        <div className="text-2xl font-bold text-white">
                             {analytics?.totalOrders || 0}
                         </div>
                         <p className="text-xs text-slate-500 mt-2">
@@ -178,17 +204,17 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Active Tables Card */}
-                <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-600">
+                        <CardTitle className="text-sm font-medium text-slate-400">
                             Aktif Masalar
                         </CardTitle>
-                        <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                            <Users className="h-5 w-5 text-amber-600" />
+                        <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-amber-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-800">
+                        <div className="text-2xl font-bold text-white">
                             {analytics?.activeTables || 0}
                         </div>
                         <p className="text-xs text-slate-500 mt-2">
@@ -198,18 +224,18 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Average Order Card */}
-                <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-600">
-                            Ortalama Sepet
+                        <CardTitle className="text-sm font-medium text-slate-400">
+                            Ortalama Sipariş
                         </CardTitle>
-                        <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                            <TrendingUp className="h-5 w-5 text-violet-600" />
+                        <div className="h-10 w-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                            <TrendingUp className="h-5 w-5 text-purple-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-800">
-                            ₺{analytics?.avgOrderValue.toFixed(2) || '0.00'}
+                        <div className="text-2xl font-bold text-white">
+                            {currency}{analytics?.avgOrderValue.toFixed(2) || '0.00'}
                         </div>
                         <p className="text-xs text-slate-500 mt-2">
                             sipariş başına
@@ -219,56 +245,53 @@ export default function DashboardPage() {
             </div>
 
             {/* Best Sellers */}
-            <Card className="bg-white border-slate-200 shadow-sm">
-                <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                            <Trophy className="h-5 w-5 text-orange-400" />
+                        </div>
                         <div>
-                            <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                                <Trophy className="h-5 w-5 text-amber-500" />
-                                En Çok Satanlar
-                            </CardTitle>
-                            <CardDescription className="text-slate-500 mt-1">
-                                Bugünün popüler ürünleri
-                            </CardDescription>
+                            <CardTitle className="text-white">En Çok Satanlar</CardTitle>
+                            <p className="text-sm text-slate-400">Bugünün popüler ürünleri</p>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {analytics?.bestSellers.length === 0 ? (
-                        <div className="text-center py-12">
-                            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                                <Coffee className="h-8 w-8 text-slate-400" />
-                            </div>
-                            <p className="text-slate-500 font-medium">Henüz sipariş yok</p>
-                            <p className="text-slate-400 text-sm mt-1">Siparişler burada görünecek</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {analytics?.bestSellers.map((product, index) => (
+                    {analytics?.bestSellers && analytics.bestSellers.length > 0 ? (
+                        <div className="space-y-3">
+                            {analytics.bestSellers.map((item, index) => (
                                 <div
-                                    key={product.name}
-                                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors"
+                                    key={item.name}
+                                    className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
                                 >
-                                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${index === 0 ? 'bg-amber-100 text-amber-700' :
-                                            index === 1 ? 'bg-slate-100 text-slate-700' :
-                                                index === 2 ? 'bg-orange-100 text-orange-700' :
-                                                    'bg-slate-50 text-slate-500'
-                                        }`}>
-                                        {index + 1}
+                                    <div className="flex items-center gap-4">
+                                        <div
+                                            className="h-10 w-10 rounded-xl flex items-center justify-center text-white font-bold"
+                                            style={{
+                                                backgroundColor: index === 0 ? themeColor : index === 1 ? '#6366f1' : '#8b5cf6',
+                                                opacity: 1 - (index * 0.15)
+                                            }}
+                                        >
+                                            {index + 1}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white">{item.name}</p>
+                                            <p className="text-sm text-slate-400">{item.quantity} adet satıldı</p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-slate-800 truncate">{product.name}</p>
-                                        <p className="text-sm text-slate-500">
-                                            {product.quantity} adet satıldı
-                                        </p>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="font-semibold text-emerald-600">
-                                            ₺{product.revenue.toFixed(2)}
-                                        </p>
+                                    <div className="text-right">
+                                        <p className="font-semibold text-white">{currency}{item.revenue.toFixed(2)}</p>
+                                        <p className="text-xs text-slate-500">gelir</p>
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <Coffee className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+                            <p className="text-slate-400">Bugün henüz sipariş yok</p>
+                            <p className="text-sm text-slate-500 mt-1">İlk siparişiniz geldiğinde burada görünecek</p>
                         </div>
                     )}
                 </CardContent>
