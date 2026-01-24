@@ -51,8 +51,8 @@ export default function QRCodePage() {
             if (data) {
                 setBusinessName(data.name || 'Kafe')
                 setLogoUrl(data.logo_url)
-                // Use slug if available, otherwise use ID
-                setRestaurantSlug(data.slug || data.id)
+                // Use ID (more reliable across environments) 
+                setRestaurantSlug(data.id)
                 const color = data.theme_color || '#000000'
                 setSavedQrColor(color)
                 setQrColor(color)
