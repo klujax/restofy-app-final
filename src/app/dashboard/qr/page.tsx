@@ -51,8 +51,8 @@ export default function QRCodePage() {
             if (data) {
                 setBusinessName(data.name || 'Kafe')
                 setLogoUrl(data.logo_url)
-                // Use ID (more reliable across environments) 
-                setRestaurantSlug(data.id)
+                // Use slug for readable URLs (service supports both slug and ID lookup)
+                setRestaurantSlug(data.slug || data.id)
                 const color = data.theme_color || '#000000'
                 setSavedQrColor(color)
                 setQrColor(color)
@@ -73,9 +73,12 @@ export default function QRCodePage() {
         }
     }, [supabase])
 
-    // ALWAYS use production URL for QR codes - phones need to access Vercel
-    // Make sure Vercel environment variables match .env.local for same database
-    const baseUrl = 'https://restofy-kafe.vercel.app'
+    // Use environment variable or detect based on current environment
+    // In production on Vercel, NEXT_PUBLIC_VERCEL_URL is automatically set
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+        || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+            ? window.location.origin
+            : 'https://restofy-kafe.vercel.app')
     const menuUrl = restaurantSlug
         ? `${baseUrl}/menu/${restaurantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''
