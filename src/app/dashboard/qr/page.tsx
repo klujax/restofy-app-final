@@ -73,8 +73,9 @@ export default function QRCodePage() {
         }
     }, [supabase])
 
-    // Use production URL for QR codes so phones can access
-    const baseUrl = 'https://restofy-kafe.vercel.app'
+    // Use current origin - local creates local URLs, production creates production URLs
+    // This ensures QR codes match the correct database
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const menuUrl = restaurantSlug
         ? `${baseUrl}/menu/${restaurantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''
