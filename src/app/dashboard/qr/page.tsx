@@ -73,8 +73,8 @@ export default function QRCodePage() {
         }
     }, [supabase])
 
-    // Construct menu URL using restaurant slug (not userId!)
-    const baseUrl = 'https://restofy-kafe.vercel.app'
+    // Construct menu URL using current origin (works for both local and production)
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
     const menuUrl = restaurantSlug
         ? `${baseUrl}/menu/${restaurantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''
