@@ -32,6 +32,7 @@ export interface Order {
     id: string
     profile_id: string // Deprecated
     restaurant_id: string
+    customer_id?: string
     customer_name: string | null
     table_number: string | null
     notes: string | null
@@ -110,6 +111,25 @@ export interface Review {
     comment: string | null
     created_at: string
     is_approved: boolean
+}
+
+export interface Customer {
+    id: string
+    full_name: string
+    phone: string | null
+    email: string | null
+    is_guest: boolean
+    created_at: string
+}
+
+export interface CustomerCard {
+    id: string
+    customer_id: string
+    card_alias: string
+    card_user_key: string
+    card_token: string | null
+    last_four_digits: string
+    created_at: string
 }
 
 export interface ServiceRequest {

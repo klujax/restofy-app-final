@@ -21,7 +21,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, {
         emoji: '🟡',
     },
     received: {
-        label: 'Alındı',
+        label: 'Onaylandı',
         color: 'text-orange-700',
         bgColor: 'bg-orange-50',
         borderColor: 'border-orange-500',

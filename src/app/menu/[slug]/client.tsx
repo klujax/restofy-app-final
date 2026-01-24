@@ -9,6 +9,7 @@ import { CategoryNav } from '@/components/customer/category-nav'
 import { CategoryCard } from '@/components/customer/category-card'
 import { CustomerMenuItem } from '@/components/customer/menu-item'
 import { CartSheet } from '@/components/customer/cart-sheet'
+import { WelcomeOverlay } from '@/components/customer/welcome-overlay'
 import { CallWaiterButton } from '@/components/customer/call-waiter-button'
 import { Coffee, MapPin, Clock, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,7 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
     const tableFromUrl = searchParams?.get('table') || ''
     const supabase = createClient()
 
+    const [currentUser, setCurrentUser] = useState<any>(null) // Using any to match WelcomeOverlay output for now, or ensure Customer type match
     const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems)
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
     const [activeCategory, setActiveCategory] = useState<string | null>(
@@ -190,6 +192,8 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
 
     return (
         <div className="min-h-screen bg-slate-50" style={{ '--theme-color': themeColor } as React.CSSProperties}>
+            <WelcomeOverlay restaurantName={restaurant.name} onComplete={setCurrentUser} />
+
             {/* Closed Banner */}
             {isClosed && (
                 <div className="fixed top-0 left-0 right-0 z-50 bg-red-500 text-white py-3 px-4">
@@ -352,6 +356,8 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
                 cafeId={restaurant.id}
                 themeColor={themeColor}
                 workingHours={restaurant.working_hours}
+                initialTableNumber={tableFromUrl}
+                initialUser={currentUser}
             />
         </div>
     )

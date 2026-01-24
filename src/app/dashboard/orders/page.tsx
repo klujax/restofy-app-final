@@ -229,16 +229,16 @@ export default function OrdersPage() {
         }
     }, [restaurantId, supabase])
 
-    const pendingOrders = useMemo(() =>
-        orders.filter((order) => ['pending', 'received'].includes(order.status)),
+    const receivedOrders = useMemo(() =>
+        orders.filter((order) => order.status === 'received'),
         [orders]
     )
     const preparingOrders = useMemo(() =>
-        orders.filter((order) => ['preparing', 'ready'].includes(order.status)),
+        orders.filter((order) => order.status === 'preparing'),
         [orders]
     )
-    const servedOrders = useMemo(() =>
-        orders.filter((order) => order.status === 'served'),
+    const readyOrders = useMemo(() =>
+        orders.filter((order) => order.status === 'ready'),
         [orders]
     )
     const paidOrders = useMemo(() =>
@@ -287,30 +287,30 @@ export default function OrdersPage() {
 
             {/* Kanban Board */}
             <div className="grid gap-6 lg:grid-cols-3">
-                {/* Pending Orders Column */}
+                {/* Received (Onaylandı) Column */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 px-1">
-                        <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                            <Bell className="h-4 w-4 text-amber-600" />
+                        <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                         </div>
-                        <h3 className="font-semibold text-slate-800">Bekliyor</h3>
-                        {pendingOrders.length > 0 && (
-                            <Badge className="bg-amber-500 hover:bg-amber-600 animate-pulse">
-                                {pendingOrders.length}
+                        <h3 className="font-semibold text-slate-800">Onaylandı</h3>
+                        {receivedOrders.length > 0 && (
+                            <Badge className="bg-emerald-500 hover:bg-emerald-600 animate-pulse">
+                                {receivedOrders.length}
                             </Badge>
                         )}
                     </div>
                     <ScrollArea className="h-[calc(100vh-350px)]">
                         <div className="space-y-3 pr-4">
-                            {pendingOrders.length === 0 ? (
+                            {receivedOrders.length === 0 ? (
                                 <div className="text-center py-12 px-4">
                                     <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
                                         <Bell className="h-6 w-6 text-slate-400" />
                                     </div>
-                                    <p className="text-sm text-slate-500">Bekleyen sipariş yok</p>
+                                    <p className="text-sm text-slate-500">Onaylanan yeni sipariş yok</p>
                                 </div>
                             ) : (
-                                pendingOrders.map((order) => (
+                                receivedOrders.map((order) => (
                                     <OrderCard
                                         key={order.id}
                                         order={order}
@@ -322,7 +322,7 @@ export default function OrdersPage() {
                     </ScrollArea>
                 </div>
 
-                {/* Preparing Column */}
+                {/* Preparing (Hazırlanıyor) Column */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 px-1">
                         <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -355,52 +355,34 @@ export default function OrdersPage() {
                     </ScrollArea>
                 </div>
 
-                {/* Served Column */}
+                {/* Ready (Hazır) Column */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 px-1">
-                        <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <Bell className="h-4 w-4 text-amber-600" />
                         </div>
-                        <h3 className="font-semibold text-slate-800">Servis Edildi</h3>
-                        {servedOrders.length > 0 && (
-                            <Badge className="bg-emerald-500 hover:bg-emerald-600">{servedOrders.length}</Badge>
+                        <h3 className="font-semibold text-slate-800">Hazır</h3>
+                        {readyOrders.length > 0 && (
+                            <Badge className="bg-amber-500 hover:bg-amber-600">{readyOrders.length}</Badge>
                         )}
                     </div>
                     <ScrollArea className="h-[calc(100vh-350px)]">
                         <div className="space-y-3 pr-4">
-                            {servedOrders.length === 0 ? (
+                            {readyOrders.length === 0 ? (
                                 <div className="text-center py-12 px-4">
                                     <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
                                         <CheckCircle2 className="h-6 w-6 text-slate-400" />
                                     </div>
-                                    <p className="text-sm text-slate-500">Servis edilmiş sipariş yok</p>
+                                    <p className="text-sm text-slate-500">Teslim bekleyen sipariş yok</p>
                                 </div>
                             ) : (
-                                servedOrders.map((order) => (
+                                readyOrders.map((order) => (
                                     <OrderCard
                                         key={order.id}
                                         order={order}
                                         onStatusChange={fetchOrders}
                                     />
                                 ))
-                            )}
-
-                            {paidOrders.length > 0 && (
-                                <>
-                                    <div className="flex items-center gap-2 pt-4">
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground font-medium">
-                                            💰 Son Ödenenler
-                                        </span>
-                                    </div>
-                                    {paidOrders.map((order) => (
-                                        <OrderCard
-                                            key={order.id}
-                                            order={order}
-                                            onStatusChange={fetchOrders}
-                                        />
-                                    ))}
-                                </>
                             )}
                         </div>
                     </ScrollArea>

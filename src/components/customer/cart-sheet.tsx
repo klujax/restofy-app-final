@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { useCartStore, CartItem } from '@/store/cart-store'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -16,14 +17,16 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ShoppingBag, Plus, Minus, Trash2, Loader2, Coffee, Banknote, CreditCard, Clock } from 'lucide-react'
+import { Trash2, ShoppingBag, Plus, Minus, CreditCard, ChevronRight, Clock, Coffee, Loader2 } from 'lucide-react'
 import { OrderTracker } from './order-tracker'
-import { WorkingHours } from '@/types/database'
+import { WorkingHours, Customer } from '@/types/database'
 
 interface CartSheetProps {
     cafeId: string
-    themeColor?: string
+    themeColor: string
     workingHours?: WorkingHours | null
+    initialTableNumber?: string
+    initialUser?: Customer | null
 }
 
 type PaymentMethod = 'cash' | 'online'
@@ -35,11 +38,13 @@ interface PlacedOrder {
     paymentMethod: PaymentMethod
 }
 
-export function CartSheet({ cafeId, themeColor = '#f97316', workingHours }: CartSheetProps) {
+export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initialTableNumber = '', initialUser }: CartSheetProps) {
     const [open, setOpen] = useState(false)
-    const [tableNumber, setTableNumber] = useState('')
     const [customerName, setCustomerName] = useState('')
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+    const [saveCard, setSaveCard] = useState(false)
+
+    // Table number comes from URL but can be edited
+    const [tableNumber, setTableNumber] = useState(initialTableNumber)
     const [loading, setLoading] = useState(false)
     const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null)
 
@@ -77,92 +82,96 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours }: Cart
 
     const isClosed = !isRestaurantOpen()
 
-    const handlePlaceOrder = async () => {
+    const searchParams = useSearchParams()
+
+    // Check for successful payment return
+    useEffect(() => {
+        const paymentSuccess = searchParams?.get('payment_success')
+        const orderId = searchParams?.get('orderId')
+
+        if (paymentSuccess === 'true' && orderId) {
+            // Fetch order details simply to show in tracker
+            const fetchOrderDetails = async () => {
+                const { data } = await supabase
+                    .from('orders')
+                    .select('total_amount, table_number, status')
+                    .eq('id', orderId)
+                    .single()
+
+                if (data) {
+                    setPlacedOrder({
+                        id: orderId,
+                        tableNumber: data.table_number,
+                        totalAmount: data.total_amount,
+                        paymentMethod: 'online',
+                    })
+                    setOpen(true)
+                    clearCart()
+                    toast.success('Ödemeniz başarıyla alındı! Siparişiniz hazırlanıyor.')
+                }
+            }
+            fetchOrderDetails()
+        }
+    }, [searchParams, supabase, clearCart])
+
+    // Auto-fill customer name if user is logged in
+    useEffect(() => {
+        if (initialUser && initialUser.full_name) {
+            setCustomerName(initialUser.full_name)
+        }
+    }, [initialUser])
+
+    const handlePayment = async () => {
         if (isClosed) {
             toast.error('Restoran şu an kapalı. Lütfen çalışma saatleri içinde sipariş verin.')
             return
         }
 
-        if (!tableNumber.trim()) {
-            toast.error('Lütfen masa numaranızı girin')
+        if (!tableNumber) {
+            toast.error('Masa numarası bulunamadı. Lütfen QR kodu tekrar okutun.')
             return
         }
 
         setLoading(true)
 
         try {
-            // First, get the restaurant to find the owner's profile_id
-            const { data: restaurant, error: restaurantError } = await supabase
-                .from('restaurants')
-                .select('owner_id')
-                .eq('id', cafeId)
-                .single()
-
-            if (restaurantError || !restaurant) {
-                console.error('Restaurant fetch error:', restaurantError)
-                throw new Error('Restoran bilgileri alınamadı')
-            }
-
-            // Build notes with payment method info
-            const orderNotes = paymentMethod === 'online' ? '[ONLINE ÖDEME]' : '[ÇIKIŞTA ÖDEME]'
-
-            const { data: order, error: orderError } = await supabase
-                .from('orders')
-                .insert({
-                    restaurant_id: cafeId,
-                    profile_id: restaurant.owner_id,
-                    customer_name: customerName.trim() || null,
-                    table_number: tableNumber.trim(),
-                    total_amount: totalPrice,
-                    status: 'received',
-                    notes: orderNotes,
-                })
-                .select()
-                .single()
-
-            if (orderError) {
-                console.error('Order insert error:', orderError)
-                throw orderError
-            }
-
-            const orderItems = items.map((item: CartItem) => ({
-                order_id: order.id,
-                menu_item_id: item.menuItem.id,
-                menu_item_name: item.menuItem.name,
-                quantity: item.quantity,
-                unit_price: item.menuItem.price,
-                total_price: item.menuItem.price * item.quantity,
-            }))
-
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .insert(orderItems)
-
-            if (itemsError) {
-                console.error('Order items insert error:', itemsError)
-                throw itemsError
-            }
-
-            toast.success('Siparişiniz alındı! 🎉')
-
-            // Store placed order info and show tracker
-            setPlacedOrder({
-                id: order.id,
-                tableNumber: tableNumber.trim(),
-                totalAmount: totalPrice,
-                paymentMethod: paymentMethod,
+            // Call Payment API to Initialize Iyzico
+            const response = await fetch('/api/payment/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    cafeId,
+                    items: items,
+                    totalPrice,
+                    tableNumber,
+                    customerName: customerName.trim(),
+                    customerId: initialUser?.id, // Send customer ID if logged in
+                    saveCard: saveCard, // Send save card preference
+                }),
             })
 
-            clearCart()
-            setTableNumber('')
-            setCustomerName('')
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Ödeme başlatılamadı')
+            }
+
+            if (data.paymentPageUrl) {
+                // Redirect user to Iyzico Payment Page
+                window.location.href = data.paymentPageUrl
+            } else {
+                throw new Error('Ödeme sayfası oluşturulamadı')
+            }
+
         } catch (error: unknown) {
-            console.error('Error placing order:', error)
+            console.error('Error starting payment:', error)
             const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
-            toast.error(`Sipariş gönderilemedi: ${errorMessage}`)
-        } finally {
+            toast.error(`Ödeme hatası: ${errorMessage}`)
             setLoading(false)
         }
+        // Note: loading will stay true while redirecting
     }
 
     const handleNewOrder = () => {
@@ -296,60 +305,50 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours }: Cart
 
                     {/* Footer - Order Form */}
                     <div className="border-t border-slate-100 p-6 space-y-4 bg-white">
-                        {/* Inputs */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <Label htmlFor="tableNumber" className="text-slate-600 text-sm">
-                                    Masa No *
-                                </Label>
+                        {/* Customer Name Input */}
+                        <div className="space-y-3">
+                            {/* Table Number Input */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Masa Numarası</label>
                                 <Input
-                                    id="tableNumber"
-                                    placeholder="Örn: 5"
+                                    placeholder="Masa No (Örn: 5)"
                                     value={tableNumber}
                                     onChange={(e) => setTableNumber(e.target.value)}
-                                    className="mt-1 rounded-xl border-slate-200"
+                                    className="h-11 bg-slate-50"
                                 />
                             </div>
-                            <div>
-                                <Label htmlFor="customerName" className="text-slate-600 text-sm">
-                                    İsminiz (opsiyonel)
-                                </Label>
-                                <Input
-                                    id="customerName"
-                                    placeholder="Örn: Ahmet"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    className="mt-1 rounded-xl border-slate-200"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Payment Method Selection */}
-                        <div>
-                            <Label className="text-slate-600 text-sm mb-2 block">Ödeme Yöntemi</Label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod('cash')}
-                                    className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${paymentMethod === 'cash'
-                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                                        }`}
-                                >
-                                    <Banknote className="h-5 w-5" />
-                                    <span className="font-medium">Çıkışta Öde</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod('online')}
-                                    className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${paymentMethod === 'online'
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                                        }`}
-                                >
-                                    <CreditCard className="h-5 w-5" />
-                                    <span className="font-medium">Online Öde</span>
-                                </button>
+                            <div className="space-y-4 mb-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">
+                                        Adınız Soyadınız {initialUser && '(Kayıtlı)'}
+                                    </label>
+                                    <Input
+                                        placeholder="Sipariş için isminiz"
+                                        value={customerName}
+                                        onChange={(e) => setCustomerName(e.target.value)}
+                                        className="h-11 bg-slate-50"
+                                        disabled={!!initialUser} // Disable if logged in
+                                    />
+                                </div>
+
+                                {initialUser && (
+                                    <div className="flex items-center space-x-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <input
+                                            type="checkbox"
+                                            id="save-card"
+                                            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        <label htmlFor="save-card" className="text-sm text-slate-600 cursor-pointer select-none">
+                                            Kredi kartımı sonraki siparişler için kaydet
+                                        </label>
+                                    </div>
+                                )}
+
+                                <div className="bg-blue-50 text-blue-700 p-3 rounded-lg text-sm flex gap-2 items-start">
+                                    <CreditCard className="h-5 w-5 text-blue-600" />
+                                    <span className="text-sm text-blue-700 font-medium">Ödeme: Kredi Kartı</span>
+                                </div>
                             </div>
                         </div>
 
@@ -363,7 +362,7 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours }: Cart
                         <Button
                             className={`w-full h-14 rounded-2xl text-lg font-semibold ${isClosed ? 'bg-slate-400 cursor-not-allowed' : ''}`}
                             style={{ backgroundColor: isClosed ? undefined : themeColor }}
-                            onClick={handlePlaceOrder}
+                            onClick={handlePayment}
                             disabled={loading || isClosed}
                         >
                             {loading ? (

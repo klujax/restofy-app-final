@@ -25,12 +25,10 @@ interface OrderTrackerProps {
 }
 
 const STATUS_STEPS = [
-    { key: 'pending', label: 'Sipariş Alındı', icon: Clock, description: 'Siparişiniz işletmeye iletildi' },
-    { key: 'received', label: 'Onaylandı', icon: CheckCircle2, description: 'Siparişiniz onaylandı' },
-    { key: 'preparing', label: 'Hazırlanıyor', icon: ChefHat, description: 'Siparişiniz hazırlanıyor' },
-    { key: 'ready', label: 'Hazır', icon: Bell, description: 'Siparişiniz hazır!' },
-    { key: 'served', label: 'Servis Edildi', icon: CheckCircle2, description: 'Siparişiniz teslim edildi' },
-    { key: 'paid', label: 'Tamamlandı', icon: PartyPopper, description: 'Afiyet olsun!' },
+    { key: 'received', label: 'Onaylandı', icon: CheckCircle2, description: 'Siparişiniz onaylandı ve mutfakta' },
+    { key: 'preparing', label: 'Hazırlanıyor', icon: ChefHat, description: 'Siparişiniz taze taze hazırlanıyor' },
+    { key: 'ready', label: 'Hazır', icon: Bell, description: 'Siparişiniz hazır, afiyet olsun!' },
+    { key: 'served', label: 'Tamamlandı', icon: PartyPopper, description: 'Siparişiniz tamamlandı. Afiyet olsun!' },
 ]
 
 export function OrderTracker({
@@ -93,8 +91,15 @@ export function OrderTracker({
         }
     }, [orderId, supabase])
 
-    const currentStepIndex = STATUS_STEPS.findIndex(s => s.key === currentStatus)
-    // If status not found in steps, default to first step
+    let currentStepIndex = STATUS_STEPS.findIndex(s => s.key === currentStatus)
+
+    // Handle 'paid' status as completed (served)
+    if (currentStatus === 'paid') {
+        currentStepIndex = STATUS_STEPS.findIndex(s => s.key === 'served')
+    }
+
+    // If status not found (e.g. pending), default to -1 which serves as "waiting for confirmation" or show first step
+    // If pending, we might want to show first step as "waiting"
     const validStepIndex = currentStepIndex >= 0 ? currentStepIndex : 0
     const currentStepInfo = STATUS_STEPS[validStepIndex]
     const CurrentIcon = currentStepInfo.icon

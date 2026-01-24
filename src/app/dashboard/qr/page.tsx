@@ -73,12 +73,9 @@ export default function QRCodePage() {
         }
     }, [supabase])
 
-    // Use environment variable or detect based on current environment
-    // In production on Vercel, NEXT_PUBLIC_VERCEL_URL is automatically set
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-        || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-            ? window.location.origin
-            : 'https://restofy-kafe.vercel.app')
+    // Use environment variable or default to production URL
+    // We want the QR code to always point to the accessible production URL (or local if explicitly set via env)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://restofy-kafe.vercel.app'
     const menuUrl = restaurantSlug
         ? `${baseUrl}/menu/${restaurantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''
