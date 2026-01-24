@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         }
 
         // @ts-ignore
-        const { default: iyzipay } = await import('@/lib/iyzipay');
+        const { default: iyzipay } = await import('@/lib/iyzico-client');
 
         return new Promise<NextResponse>((resolve) => {
             iyzipay.checkoutFormInitialize.retrieve({

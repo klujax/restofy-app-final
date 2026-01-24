@@ -98,7 +98,7 @@ export async function POST(req: Request) {
 
         // Dynamically import iyzipay only when needed (and in production mode)
         // @ts-ignore
-        const { default: iyzipay } = await import('@/lib/iyzipay');
+        const { default: iyzipay } = await import('@/lib/iyzico-client');
 
         const request = {
             locale: 'tr',

@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'standalone',
     typescript: {
         ignoreBuildErrors: true,
     },
@@ -15,9 +14,7 @@ const nextConfig = {
             },
         ],
     },
-    experimental: {
-        missingSuspenseWithCSRBailout: false,
-    },
+    serverExternalPackages: ['iyzipay'],
 };
 
 export default nextConfig;
