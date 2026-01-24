@@ -3,9 +3,6 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
     images: {
         remotePatterns: [
             {
@@ -14,9 +11,7 @@ const nextConfig = {
             },
         ],
     },
-    experimental: {
-        serverComponentsExternalPackages: ['iyzipay'],
-    },
+    serverExternalPackages: ['iyzipay'],
 };
 
 export default nextConfig;
