@@ -73,8 +73,8 @@ export default function QRCodePage() {
         }
     }, [supabase])
 
-    // Construct menu URL using current origin (works for both local and production)
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+    // Use production URL for QR codes so phones can access
+    const baseUrl = 'https://restofy-kafe.vercel.app'
     const menuUrl = restaurantSlug
         ? `${baseUrl}/menu/${restaurantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''

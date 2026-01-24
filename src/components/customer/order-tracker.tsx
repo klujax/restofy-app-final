@@ -25,7 +25,8 @@ interface OrderTrackerProps {
 }
 
 const STATUS_STEPS = [
-    { key: 'received', label: 'Sipariş Alındı', icon: Clock, description: 'Siparişiniz işletmeye iletildi' },
+    { key: 'pending', label: 'Sipariş Alındı', icon: Clock, description: 'Siparişiniz işletmeye iletildi' },
+    { key: 'received', label: 'Onaylandı', icon: CheckCircle2, description: 'Siparişiniz onaylandı' },
     { key: 'preparing', label: 'Hazırlanıyor', icon: ChefHat, description: 'Siparişiniz hazırlanıyor' },
     { key: 'ready', label: 'Hazır', icon: Bell, description: 'Siparişiniz hazır!' },
     { key: 'served', label: 'Servis Edildi', icon: CheckCircle2, description: 'Siparişiniz teslim edildi' },
@@ -40,11 +41,13 @@ export function OrderTracker({
     themeColor,
     onNewOrder
 }: OrderTrackerProps) {
-    const [currentStatus, setCurrentStatus] = useState<string>('received')
+    const [currentStatus, setCurrentStatus] = useState<string>('pending')
     const supabase = createClient()
 
     // Subscribe to order status changes
     useEffect(() => {
+        console.log('[OrderTracker] Setting up subscription for order:', orderId)
+
         const channel = supabase
             .channel(`order-${orderId}`)
             .on(
@@ -56,33 +59,44 @@ export function OrderTracker({
                     filter: `id=eq.${orderId}`,
                 },
                 (payload) => {
+                    console.log('[OrderTracker] Received update:', payload.new)
                     const newOrder = payload.new as Order
                     setCurrentStatus(newOrder.status)
                 }
             )
-            .subscribe()
+            .subscribe((status, err) => {
+                console.log('[OrderTracker] Subscription status:', status)
+                if (err) console.error('[OrderTracker] Error:', err)
+            })
 
         // Fetch initial status
         const fetchOrder = async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('orders')
                 .select('status')
                 .eq('id', orderId)
                 .single()
 
             if (data) {
+                console.log('[OrderTracker] Initial status:', data.status)
                 setCurrentStatus(data.status)
+            }
+            if (error) {
+                console.error('[OrderTracker] Fetch error:', error)
             }
         }
         fetchOrder()
 
         return () => {
+            console.log('[OrderTracker] Removing channel')
             supabase.removeChannel(channel)
         }
     }, [orderId, supabase])
 
     const currentStepIndex = STATUS_STEPS.findIndex(s => s.key === currentStatus)
-    const currentStepInfo = STATUS_STEPS[currentStepIndex] || STATUS_STEPS[0]
+    // If status not found in steps, default to first step
+    const validStepIndex = currentStepIndex >= 0 ? currentStepIndex : 0
+    const currentStepInfo = STATUS_STEPS[validStepIndex]
     const CurrentIcon = currentStepInfo.icon
 
     return (
