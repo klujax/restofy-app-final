@@ -1,0 +1,6 @@
+{
+    "env": {
+        "NEXT_PUBLIC_SUPABASE_URL": "https://xtxfpcboapykgpwdxcag.supabase.co",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eGZwY2JvYXB5a2dwd2R4Y2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0MTEyNTIsImV4cCI6MjA4Mzk4NzI1Mn0.Tt6Nh5dBpWHoHdrS8JPLhHzLIbuiuzqU5P8IyRLGc10"
+    }
+}
