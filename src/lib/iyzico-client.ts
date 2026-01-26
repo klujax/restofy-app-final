@@ -1,21 +1,28 @@
 // Temporary mock to fix build
-class Iyzipay {
-    constructor(config: any) { }
-    payment: any = {
-        create: (data: any, cb: any) => cb(null, { status: 'failure', errorMessage: 'Payment disabled' })
-    }
-    checkoutFormInitialize: any = {
-        create: (data: any, cb: any) => cb(null, { status: 'failure', errorMessage: 'Payment disabled' }),
-        retrieve: (data: any, cb: any) => cb(null, { status: 'failure', errorMessage: 'Payment disabled' })
-    }
+interface MockCallback {
+    (err: { status: string; errorMessage: string } | null, result: { status: string; errorMessage?: string; paymentPageUrl?: string; basketId?: string; paymentStatus?: string; paymentId?: string } | null): void;
 }
 
-let iyzipay: any;
+class Iyzipay {
+    constructor() { }
+
+    payment = {
+        create: (_data: unknown, cb: MockCallback) => cb(null, { status: 'failure', errorMessage: 'Payment disabled' })
+    };
+
+    checkoutFormInitialize = {
+        create: (_data: unknown, cb: MockCallback) => cb(null, { status: 'failure', errorMessage: 'Payment disabled' }),
+        retrieve: (_data: unknown, cb: MockCallback) => cb(null, { status: 'failure', errorMessage: 'Payment disabled' })
+    };
+}
+
+let iyzipay: Iyzipay;
 
 if (typeof window === 'undefined') {
-    iyzipay = new Iyzipay({});
+    iyzipay = new Iyzipay();
 } else {
-    iyzipay = {} as any;
+    // Client-side fallback
+    iyzipay = new Iyzipay();
 }
 
 export default iyzipay;

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
+import QRCode from 'react-qr-code'
 import NextImage from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -353,19 +353,36 @@ export default function QRCodePage() {
 
                                 {/* QR Code */}
                                 <div ref={printRef} className="flex justify-center my-4">
-                                    <QRCodeSVG
-                                        value={menuUrl || 'https://restofy.app'}
-                                        size={180}
-                                        level="H"
-                                        fgColor={qrColor}
-                                        includeMargin={false}
-                                        imageSettings={logoUrl ? {
-                                            src: logoUrl,
-                                            height: 40,
-                                            width: 40,
-                                            excavate: true,
-                                        } : undefined}
-                                    />
+                                    <div style={{ position: 'relative', width: 180, height: 180 }}>
+                                        <QRCode
+                                            value={menuUrl || 'https://restofy.app'}
+                                            size={180}
+                                            level="H"
+                                            fgColor={qrColor}
+                                            bgColor="#ffffff"
+                                            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                        />
+                                        {logoUrl && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 5,
+                                                overflow: 'hidden',
+                                                border: '2px solid white',
+                                            }}>
+                                                <NextImage
+                                                    src={logoUrl}
+                                                    alt="Logo"
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Instructions */}

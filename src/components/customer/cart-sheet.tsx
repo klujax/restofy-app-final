@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
     Sheet,
     SheetContent,
@@ -17,7 +16,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Trash2, ShoppingBag, Plus, Minus, CreditCard, ChevronRight, Clock, Coffee, Loader2 } from 'lucide-react'
+import { Trash2, ShoppingBag, Plus, Minus, CreditCard, Clock, Coffee, Loader2 } from 'lucide-react'
 import { OrderTracker } from './order-tracker'
 import { WorkingHours, Customer } from '@/types/database'
 
@@ -337,6 +336,8 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
                                         <input
                                             type="checkbox"
                                             id="save-card"
+                                            checked={saveCard}
+                                            onChange={(e) => setSaveCard(e.target.checked)}
                                             className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                                         />
                                         <label htmlFor="save-card" className="text-sm text-slate-600 cursor-pointer select-none">

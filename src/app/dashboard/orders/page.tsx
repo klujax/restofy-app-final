@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { OrderWithItems, OrderStatus } from '@/types/orders'
+import { OrderWithItems } from '@/types/orders'
 import { ServiceRequest } from '@/types/database'
 import { OrderCard } from '@/components/orders/order-card'
 import { ServiceRequestCard } from '@/components/orders/service-request-card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Bell, Clock, ChefHat, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Loader2, Bell, ChefHat, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function OrdersPage() {
@@ -19,7 +19,7 @@ export default function OrdersPage() {
     const supabase = createClient()
 
     const [restaurantId, setRestaurantId] = useState<string | null>(null)
-    const [ownerId, setOwnerId] = useState<string | null>(null)
+
 
     const fetchOrders = useCallback(async (specificRestaurantId?: string) => {
         try {
@@ -241,10 +241,7 @@ export default function OrdersPage() {
         orders.filter((order) => order.status === 'ready'),
         [orders]
     )
-    const paidOrders = useMemo(() =>
-        orders.filter((order) => order.status === 'paid').slice(0, 10),
-        [orders]
-    )
+
 
     if (loading) {
         return (

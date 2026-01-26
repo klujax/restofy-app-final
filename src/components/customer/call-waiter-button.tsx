@@ -45,7 +45,7 @@ export function CallWaiterButton({ cafeId, initialTableNumber }: CallWaiterButto
 
         setLoading(true)
         try {
-            const { error, data } = await supabase
+            const { error } = await supabase
                 .from('service_requests')
                 .insert({
                     restaurant_id: cafeId, // CafeId passed prop is restaurantId

@@ -2,10 +2,29 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 import { NextResponse } from 'next/server';
 
+interface CartItem {
+    menuItem: {
+        id: string;
+        name: string;
+        price: number;
+    };
+    quantity: number;
+}
+
+interface RequestBody {
+    cafeId: string;
+    items: CartItem[];
+    totalPrice: number;
+    tableNumber: string;
+    customerName?: string;
+    customerId?: string;
+    saveCard?: boolean;
+}
+
 export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        const { cafeId, items, totalPrice, tableNumber, customerName, customerId, saveCard } = body;
+        const body = (await req.json()) as RequestBody;
+        const { cafeId, items, totalPrice, tableNumber, customerName } = body;
 
         let supabase;
         try {
@@ -48,7 +67,7 @@ export async function POST(req: Request) {
         if (orderError) throw new Error(`Sipariş oluşturulamadı: ${orderError.message}`);
 
         // 3. Insert Order Items
-        const orderItems = items.map((item: any) => ({
+        const orderItems = items.map((item) => ({
             order_id: order.id,
             menu_item_id: item.menuItem.id,
             menu_item_name: item.menuItem.name,
@@ -97,7 +116,6 @@ export async function POST(req: Request) {
         }
 
         // Dynamically import iyzipay only when needed (and in production mode)
-        // @ts-ignore
         const { default: iyzipay } = await import('@/lib/iyzico-client');
 
         const request = {
@@ -139,7 +157,7 @@ export async function POST(req: Request) {
                 address: `Masa ${tableNumber} - ${restaurant.name}`,
                 zipCode: '34732'
             },
-            basketItems: items.map((item: any) => ({
+            basketItems: items.map((item) => ({
                 id: item.menuItem.id,
                 name: item.menuItem.name,
                 category1: 'Gıda',
@@ -149,24 +167,26 @@ export async function POST(req: Request) {
         };
 
         return new Promise<NextResponse>((resolve) => {
-            iyzipay.checkoutFormInitialize.create(request, (err: any, result: any) => {
-                if (err || result.status !== 'success') {
-                    console.error('Iyzico Init Error:', err || result.errorMessage);
+            // Using explicit types for callback to avoid 'any'
+            iyzipay.checkoutFormInitialize.create(request, (err: { errorMessage?: string } | null, result: { status: string; errorMessage?: string; paymentPageUrl?: string } | null) => {
+                if (err || result?.status !== 'success') {
+                    console.error('Iyzico Init Error:', err || result?.errorMessage);
                     // If payment init fails, we should technically cancel the order or retry
                     // For now, return error
                     resolve(NextResponse.json({ error: result?.errorMessage || 'Ödeme başlatılamadı' }, { status: 400 }));
                 } else {
                     resolve(NextResponse.json({
                         success: true,
-                        paymentPageUrl: result.paymentPageUrl,
+                        paymentPageUrl: result?.paymentPageUrl,
                         orderId: order.id
                     }));
                 }
             });
         });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('Payment API Error:', e);
-        return NextResponse.json({ error: e.message || 'Bir hata oluştu' }, { status: 500 });
+        const errorMessage = e instanceof Error ? e.message : 'Bir hata oluştu';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

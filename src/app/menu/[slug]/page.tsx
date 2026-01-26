@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+
 import { CustomerMenuClient } from './client'
 import { restaurantService } from '@/services/restaurant.service'
 import { menuService } from '@/services/menu.service'
@@ -29,9 +29,9 @@ export default async function CustomerMenuPage({ params }: PageProps) {
         } else if (!restaurant.is_active) {
             debugError = "Restaurant is not active"
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('Error fetching restaurant:', e)
-        debugError = e.message || 'Unknown error occurred'
+        debugError = (e as Error).message || 'Unknown error occurred'
     }
 
     if (debugError || !restaurant) {

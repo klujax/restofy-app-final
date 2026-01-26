@@ -11,16 +11,10 @@ import {
     Palette,
     Upload,
     Loader2,
-    Save,
     X,
     Wifi,
-    Check,
     Sparkles,
-    Clock,
-    ToggleLeft,
-    ToggleRight,
     Building2,
-    Info,
     QrCode,
     CalendarDays,
     Settings2,
@@ -28,7 +22,7 @@ import {
     ArrowRight
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { WorkingHours, DaySchedule } from '@/types/database'
+import { WorkingHours } from '@/types/database'
 import { cn } from '@/lib/utils'
 
 const DAY_NAMES = [

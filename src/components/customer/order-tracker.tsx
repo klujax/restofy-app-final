@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { Order } from '@/types/database'
 import {
     CheckCircle2,
-    Clock,
     ChefHat,
     Bell,
     PartyPopper,

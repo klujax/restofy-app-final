@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Restaurant, Category, MenuItem } from '@/types/database'
+import { Restaurant, Category, MenuItem, Customer } from '@/types/database'
 import { CategoryNav } from '@/components/customer/category-nav'
 import { CategoryCard } from '@/components/customer/category-card'
 import { CustomerMenuItem } from '@/components/customer/menu-item'
@@ -25,13 +25,16 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
     const tableFromUrl = searchParams?.get('table') || ''
     const supabase = createClient()
 
-    const [currentUser, setCurrentUser] = useState<any>(null) // Using any to match WelcomeOverlay output for now, or ensure Customer type match
+    interface CustomerUser {
+        id?: string
+        full_name?: string
+        phone?: string
+        is_guest: boolean
+    }
+    const [currentUser, setCurrentUser] = useState<CustomerUser | null>(null)
     const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems)
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
-    const [activeCategory, setActiveCategory] = useState<string | null>(
-        categories[0]?.id || null
-    )
-    const categoryRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
 
     // Check if restaurant is currently open
     const isRestaurantOpen = () => {
@@ -72,33 +75,12 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
     }
     const todaySchedule = getTodaySchedule()
 
-    const scrollToCategory = (categoryId: string) => {
-        setActiveCategory(categoryId)
-        const element = categoryRefs.current.get(categoryId)
-        if (element) {
-            const yOffset = -140
-            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
-            window.scrollTo({ top: y, behavior: 'smooth' })
-        }
-    }
-
     // Scroll tracking (only when viewing items within a category)
     useEffect(() => {
         if (!selectedCategory) return
 
         const handleScroll = () => {
-            const scrollPosition = window.scrollY + 160
-
-            for (const category of categories) {
-                const element = categoryRefs.current.get(category.id)
-                if (element) {
-                    const { offsetTop, offsetHeight } = element
-                    if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-                        setActiveCategory(category.id)
-                        break
-                    }
-                }
-            }
+            // Logic removed as activeCategory is unused
         }
 
         window.addEventListener('scroll', handleScroll)
@@ -357,7 +339,7 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
                 themeColor={themeColor}
                 workingHours={restaurant.working_hours}
                 initialTableNumber={tableFromUrl}
-                initialUser={currentUser}
+                initialUser={currentUser as unknown as Customer}
             />
         </div>
     )

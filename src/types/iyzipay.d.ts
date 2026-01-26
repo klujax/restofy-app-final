@@ -82,16 +82,43 @@ declare module 'iyzipay' {
         enabledInstallments?: number[];
     }
 
+    interface IyzipayResult {
+        status: string;
+        errorCode?: string;
+        errorMessage?: string;
+        errorGroup?: string;
+        locale?: string;
+        systemTime?: number;
+        conversationId?: string;
+        price?: number;
+        paidPrice?: number;
+        installment?: number;
+        paymentId?: string;
+        basketId?: string;
+        currency?: string;
+        checkoutFormContent?: string;
+        token?: string;
+        callbackUrl?: string;
+        paymentStatus?: string;
+    }
+
+    interface IyzipayError {
+        status: string;
+        errorCode?: string;
+        errorMessage?: string;
+        errorGroup?: string;
+    }
+
     class Iyzipay {
         constructor(options: Options);
 
         checkoutFormInitialize: {
-            create(request: CheckoutFormInitializeRequest, callback: (err: any, result: any) => void): void;
-            retrieve(request: { locale?: string; conversationId?: string; token: string }, callback: (err: any, result: any) => void): void;
+            create(request: CheckoutFormInitializeRequest, callback: (err: IyzipayError | null, result: IyzipayResult) => void): void;
+            retrieve(request: { locale?: string; conversationId?: string; token: string }, callback: (err: IyzipayError | null, result: IyzipayResult) => void): void;
         };
 
         payment: {
-            create(request: PaymentRequest, callback: (err: any, result: any) => void): void;
+            create(request: PaymentRequest, callback: (err: IyzipayError | null, result: IyzipayResult) => void): void;
         };
 
         LOCALE: {
@@ -114,6 +141,7 @@ declare module 'iyzipay' {
         BASKET_ITEM_TYPE: {
             PHYSICAL: string;
             VIRTUAL: string;
+            EN: string;
         };
     }
 

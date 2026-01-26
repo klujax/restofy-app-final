@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/server';
-
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
@@ -20,7 +18,6 @@ export async function POST(req: Request) {
             supabase = await createClient();
         }
 
-        // @ts-ignore
         const { default: iyzipay } = await import('@/lib/iyzico-client');
 
         return new Promise<NextResponse>((resolve) => {
@@ -28,16 +25,16 @@ export async function POST(req: Request) {
                 locale: 'tr',
                 conversationId: '123456789', // Not strictly verified by Iyzico SDK in retrieve
                 token: token
-            }, async (err: any, result: any) => {
-                if (err || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
-                    console.error('Payment Verification Failed:', err || result.errorMessage);
+            }, async (err, result) => {
+                if (err || !result || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
+                    console.error('Payment Verification Failed:', err || result?.errorMessage);
                     // Redirect to failure page
                     // We need to find the restaurant slug ideally, but we might not have it easily here
                     // unless we query by orderID if available in result, or use a generic failure page.
                     // Let's try to find order from basketId if available
 
                     const orderId = result?.basketId;
-                    let redirectUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://restofy-kafe.vercel.app';
+                    const redirectUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://restofy-kafe.vercel.app';
 
                     if (orderId) {
                         // Update order as failed
@@ -47,7 +44,7 @@ export async function POST(req: Request) {
                     resolve(NextResponse.redirect(`${redirectUrl}/payment/failure`, 302));
                 } else {
                     // Success
-                    const orderId = result.basketId;
+                    const orderId = result.basketId!;
 
                     // 1. Update Order Status
                     const { data: order, error: orderError } = await supabase
@@ -78,8 +75,9 @@ export async function POST(req: Request) {
             });
         });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Bir hata oluştu';
         console.error('Callback Error:', e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

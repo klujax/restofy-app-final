@@ -3,16 +3,14 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { User, LogIn, UserPlus, ArrowRight } from 'lucide-react'
+import { User, ArrowRight } from 'lucide-react'
 import { loginCustomer, registerCustomer } from '@/app/auth/actions'
 
 interface WelcomeOverlayProps {
     restaurantName: string
-    onComplete: (user: any) => void
+    onComplete: (user: { is_guest: boolean; full_name?: string; phone?: string; id?: string }) => void
 }
 
 export function WelcomeOverlay({ restaurantName, onComplete }: WelcomeOverlayProps) {
@@ -24,8 +22,6 @@ export function WelcomeOverlay({ restaurantName, onComplete }: WelcomeOverlayPro
     const [phone, setPhone] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
-
-    const supabase = createClient()
 
     useEffect(() => {
         // Check local session

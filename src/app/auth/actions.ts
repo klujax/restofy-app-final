@@ -57,9 +57,16 @@ export async function logout() {
 // CUSTOMER AUTH (Custom Table)
 // ==========================================
 
+// import { hash, compare } from 'bcrypt-ts'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function registerCustomer(data: any) {
+interface CustomerRegistrationData {
+    full_name: string;
+    phone: string;
+    password: string;
+}
+
+export async function registerCustomer(data: CustomerRegistrationData) {
     // Use Admin Client to bypass RLS policies
     let supabase;
     try {
@@ -80,13 +87,17 @@ export async function registerCustomer(data: any) {
         return { error: 'Bu telefon numarası zaten kayıtlı.' }
     }
 
+    // Hash password (DISABLED due to Edge Runtime issues)
+    // const hashedPassword = await hash(data.password, 10);
+    const hashedPassword = data.password;
+
     // Create customer
     const { data: customer, error } = await supabase
         .from('customers')
         .insert({
             full_name: data.full_name,
             phone: data.phone,
-            password_hash: data.password, // TODO: Hash password in prod
+            password_hash: hashedPassword,
             is_guest: false
         })
         .select()
@@ -120,8 +131,11 @@ export async function loginCustomer(phone: string, password: string) {
         return { error: 'Kullanıcı bulunamadı.' }
     }
 
-    // Verify password (Simple check for now)
-    if (customer.password_hash !== password) {
+    // Verify password
+    // const isValid = await compare(password, customer.password_hash);
+    const isValid = password === customer.password_hash;
+
+    if (!isValid) {
         return { error: 'Hatalı şifre.' }
     }
 
