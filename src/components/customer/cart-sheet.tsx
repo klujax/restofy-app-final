@@ -182,20 +182,28 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
     return (
         <>
             {/* Order Tracker Sheet */}
+            {/* Order Tracker Sheet */}
             {placedOrder && (
                 <Sheet open={trackerOpen} onOpenChange={setTrackerOpen}>
                     <SheetTrigger asChild>
-                        <button
-                            className="fixed right-4 z-40 flex items-center justify-center gap-2 text-white rounded-full px-4 py-3 shadow-xl active:scale-[0.98] transition-all bg-slate-900"
-                            style={{
-                                bottom: totalItems > 0 ? '6rem' : '1.5rem',
-                                left: '1rem',
-                                width: 'calc(100% - 2rem)'
-                            }}
+                        {/* Top Fixed Order Status Banner */}
+                        <div
+                            className="fixed top-4 left-4 right-4 z-40 bg-slate-900/90 backdrop-blur-md text-white rounded-2xl p-4 shadow-xl flex items-center justify-between cursor-pointer animate-in-fade border border-white/10"
+                            onClick={() => setTrackerOpen(true)}
                         >
-                            <Clock className="h-5 w-5" />
-                            <span className="font-semibold">Siparişimi Takip Et</span>
-                        </button>
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                    <Clock className="h-5 w-5 text-emerald-400 animate-pulse" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm">Siparişiniz Hazırlanıyor</p>
+                                    <p className="text-xs text-slate-400">Detaylar için dokunun</p>
+                                </div>
+                            </div>
+                            <div className="bg-white/10 px-3 py-1 rounded-lg">
+                                <span className="text-xs font-bold">#{placedOrder.id.slice(0, 4)}</span>
+                            </div>
+                        </div>
                     </SheetTrigger>
 
                     <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0">

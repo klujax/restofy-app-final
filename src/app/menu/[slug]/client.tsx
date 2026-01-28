@@ -9,7 +9,6 @@ import { CategoryNav } from '@/components/customer/category-nav'
 import { CategoryCard } from '@/components/customer/category-card'
 import { CustomerMenuItem } from '@/components/customer/menu-item'
 import { CartSheet } from '@/components/customer/cart-sheet'
-import { WelcomeOverlay } from '@/components/customer/welcome-overlay'
 import { CallWaiterButton } from '@/components/customer/call-waiter-button'
 import { Coffee, MapPin, Clock, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,10 +30,17 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
         phone?: string
         is_guest: boolean
     }
-    const [currentUser, setCurrentUser] = useState<CustomerUser | null>(null)
+    const [currentUser, setCurrentUser] = useState<CustomerUser>({ is_guest: true })
     const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems)
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
 
+    // Recover user session if exists, otherwise default is already Guest
+    useEffect(() => {
+        const storedUser = localStorage.getItem('customer_user')
+        if (storedUser) {
+            setCurrentUser(JSON.parse(storedUser))
+        }
+    }, [])
 
     // Check if restaurant is currently open
     const isRestaurantOpen = () => {
@@ -174,7 +180,6 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
 
     return (
         <div className="min-h-screen bg-slate-50" style={{ '--theme-color': themeColor } as React.CSSProperties}>
-            <WelcomeOverlay restaurantName={restaurant.name} onComplete={setCurrentUser} />
 
             {/* Closed Banner */}
             {isClosed && (

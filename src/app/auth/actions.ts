@@ -57,7 +57,7 @@ export async function logout() {
 // CUSTOMER AUTH (Custom Table)
 // ==========================================
 
-// import { hash, compare } from 'bcrypt-ts'
+import { hash, compare } from 'bcryptjs'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 interface CustomerRegistrationData {
@@ -87,9 +87,8 @@ export async function registerCustomer(data: CustomerRegistrationData) {
         return { error: 'Bu telefon numarası zaten kayıtlı.' }
     }
 
-    // Hash password (DISABLED due to Edge Runtime issues)
-    // const hashedPassword = await hash(data.password, 10);
-    const hashedPassword = data.password;
+    // Hash password
+    const hashedPassword = await hash(data.password, 10);
 
     // Create customer
     const { data: customer, error } = await supabase
@@ -132,8 +131,7 @@ export async function loginCustomer(phone: string, password: string) {
     }
 
     // Verify password
-    // const isValid = await compare(password, customer.password_hash);
-    const isValid = password === customer.password_hash;
+    const isValid = await compare(password, customer.password_hash);
 
     if (!isValid) {
         return { error: 'Hatalı şifre.' }
