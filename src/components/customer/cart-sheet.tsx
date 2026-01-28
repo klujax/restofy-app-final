@@ -146,6 +146,8 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
     useEffect(() => {
         if (placedOrders.length > 0) {
             localStorage.setItem(`placedOrders-${cafeId}`, JSON.stringify(placedOrders))
+        } else {
+            localStorage.removeItem(`placedOrders-${cafeId}`)
         }
     }, [placedOrders, cafeId])
 
