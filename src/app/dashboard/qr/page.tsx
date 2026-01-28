@@ -50,7 +50,7 @@ export default function QRCodePage() {
 
             // Fallback: If specific ID fetch failed, try getting any restaurant for this user
             if ((error || !data) && targetId) {
-                console.warn('Fetching specific restaurant failed, falling back to any restaurant...')
+                // Fallback: If specific ID fetch failed, try getting any restaurant for this user
                 const fallback = await supabase
                     .from('restaurants')
                     .select('name, logo_url, theme_color, slug, id')
@@ -66,12 +66,7 @@ export default function QRCodePage() {
                 }
             }
 
-            if (error) {
-                console.error('Error fetching restaurant:', error)
-            }
-
             if (data) {
-                console.log('Restaurant data loaded:', data)
                 setBusinessName(data.name || 'Kafe')
                 setLogoUrl(data.logo_url)
                 // Use slug for readable URLs (service supports both slug and ID lookup)
@@ -79,8 +74,6 @@ export default function QRCodePage() {
                 const color = data.theme_color || '#000000'
                 setSavedQrColor(color)
                 setQrColor(color)
-            } else {
-                console.warn('No restaurant data found')
             }
             setLoading(false)
         }

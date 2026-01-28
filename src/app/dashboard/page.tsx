@@ -127,7 +127,7 @@ export default function OwnerDashboardPage() {
 
                             // Play notification sound
                             const audio = new Audio('/notification.mp3') // Assume we might add this later, or browser default beep
-                            audio.play().catch(e => console.log('Audio play failed', e))
+                            audio.play().catch(() => { })
                         }
 
                         fetchDashboardData()
