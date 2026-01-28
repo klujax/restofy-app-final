@@ -221,16 +221,17 @@ export default function SettingsPage() {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Core Branding */}
-                <div className="lg:col-span-2 space-y-8">
+            <div className="flex flex-col gap-8">
+                {/* Top Section: Branding and Visuals */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Core Branding */}
                     <Card className="p-8 border-slate-200 shadow-sm bg-white">
                         <div className="flex items-center gap-3 mb-6">
                             <Building2 className="h-5 w-5 text-indigo-500" />
                             <h2 className="text-lg font-bold text-slate-800">Genel Bilgiler</h2>
                         </div>
 
-                        <div className="flex flex-col md:flex-row gap-8">
+                        <div className="flex flex-col sm:flex-row gap-8">
                             {/* Logo Upload Section */}
                             <div className="flex flex-col items-center gap-4">
                                 <div
@@ -296,10 +297,10 @@ export default function SettingsPage() {
                             <h2 className="text-lg font-bold text-slate-800">Görünüm ve Tema</h2>
                         </div>
 
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                             <div>
-                                <Label className="text-slate-600 font-bold text-sm mb-4 block">Menü Tema Rengi</Label>
-                                <div className="grid grid-cols-4 sm:grid-cols-8 gap-4">
+                                <Label className="text-slate-600 font-bold text-sm mb-3 block">Menü Tema Rengi</Label>
+                                <div className="flex flex-wrap gap-3">
                                     {THEME_COLORS.map((color) => (
                                         <button
                                             key={color.value}
@@ -319,7 +320,7 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
                                         <Wifi className="h-4 w-4 text-slate-500" />
@@ -359,44 +360,43 @@ export default function SettingsPage() {
                     </Card>
                 </div>
 
-                {/* Right Column: Working Hours */}
-                <Card className="lg:col-span-1 p-6 border-slate-200 shadow-sm bg-white overflow-hidden flex flex-col">
-                    <div className="flex items-center gap-3 mb-6">
+                {/* Bottom Section: Working Hours (Horizontal) */}
+                <Card className="p-8 border-slate-200 shadow-sm bg-white">
+                    <div className="flex items-center gap-3 mb-8">
                         <CalendarDays className="h-5 w-5 text-indigo-500" />
                         <h2 className="text-lg font-bold text-slate-800">Çalışma Saatleri</h2>
                     </div>
 
-                    <div className="space-y-4 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                         {DAY_NAMES.map(({ key, label }) => {
                             const schedule = workingHours[key]
                             return (
                                 <div
                                     key={key}
                                     className={cn(
-                                        "p-4 rounded-2xl border transition-all",
-                                        schedule.closed ? "bg-slate-50 border-slate-100" : "bg-white border-slate-200"
+                                        "p-4 rounded-2xl border transition-all flex flex-col items-center text-center gap-3",
+                                        schedule.closed ? "bg-slate-50 border-slate-100" : "bg-white border-slate-200 shadow-sm"
                                     )}
                                 >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className={cn("text-sm font-bold", schedule.closed ? "text-slate-400" : "text-slate-700")}>
-                                            {label}
-                                        </span>
-                                        <button
-                                            onClick={() => setWorkingHours(prev => ({
-                                                ...prev,
-                                                [key]: { ...prev[key], closed: !prev[key].closed }
-                                            }))}
-                                            className={cn(
-                                                "text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider transition-colors",
-                                                schedule.closed ? "bg-red-50 text-red-600 border border-red-100" : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                            )}
-                                        >
-                                            {schedule.closed ? "KAPALI" : "AÇIK"}
-                                        </button>
-                                    </div>
+                                    <span className={cn("text-sm font-bold", schedule.closed ? "text-slate-400" : "text-slate-701 uppercase tracking-tight")}>
+                                        {label}
+                                    </span>
+
+                                    <button
+                                        onClick={() => setWorkingHours(prev => ({
+                                            ...prev,
+                                            [key]: { ...prev[key], closed: !prev[key].closed }
+                                        }))}
+                                        className={cn(
+                                            "text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider transition-colors",
+                                            schedule.closed ? "bg-red-50 text-red-600 border border-red-100" : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                        )}
+                                    >
+                                        {schedule.closed ? "KAPALI" : "AÇIK"}
+                                    </button>
 
                                     {!schedule.closed && (
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-col gap-2 w-full mt-1">
                                             <Input
                                                 type="time"
                                                 value={schedule.open}
@@ -404,9 +404,9 @@ export default function SettingsPage() {
                                                     ...prev,
                                                     [key]: { ...prev[key], open: e.target.value }
                                                 }))}
-                                                className="h-9 text-xs border-slate-200 rounded-lg text-center"
+                                                className="h-9 text-xs border-slate-200 rounded-lg text-center font-bold text-slate-700 p-0"
                                             />
-                                            <span className="text-slate-400 text-xs">-</span>
+                                            <span className="text-slate-300 text-[10px] font-bold">bitiş</span>
                                             <Input
                                                 type="time"
                                                 value={schedule.close}
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                                                     ...prev,
                                                     [key]: { ...prev[key], close: e.target.value }
                                                 }))}
-                                                className="h-9 text-xs border-slate-200 rounded-lg text-center"
+                                                className="h-9 text-xs border-slate-200 rounded-lg text-center font-bold text-slate-700 p-0"
                                             />
                                         </div>
                                     )}
