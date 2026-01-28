@@ -46,9 +46,32 @@ export default function QRCodePage() {
                 query = query.eq('id', targetId)
             }
 
-            const { data } = await query.limit(1).single()
+            let { data, error } = await query.limit(1).single()
+
+            // Fallback: If specific ID fetch failed, try getting any restaurant for this user
+            if ((error || !data) && targetId) {
+                console.warn('Fetching specific restaurant failed, falling back to any restaurant...')
+                const fallback = await supabase
+                    .from('restaurants')
+                    .select('name, logo_url, theme_color, slug, id')
+                    .eq('owner_id', user.id)
+                    .limit(1)
+                    .single()
+
+                if (fallback.data) {
+                    data = fallback.data
+                    error = null
+                    // Store this valid ID to prevent future errors
+                    localStorage.setItem('selectedRestaurantId', fallback.data.id)
+                }
+            }
+
+            if (error) {
+                console.error('Error fetching restaurant:', error)
+            }
 
             if (data) {
+                console.log('Restaurant data loaded:', data)
                 setBusinessName(data.name || 'Kafe')
                 setLogoUrl(data.logo_url)
                 // Use slug for readable URLs (service supports both slug and ID lookup)
@@ -56,6 +79,8 @@ export default function QRCodePage() {
                 const color = data.theme_color || '#000000'
                 setSavedQrColor(color)
                 setQrColor(color)
+            } else {
+                console.warn('No restaurant data found')
             }
             setLoading(false)
         }
@@ -73,9 +98,21 @@ export default function QRCodePage() {
         }
     }, [supabase])
 
-    // Use environment variable or default to production URL
-    // We want the QR code to always point to the accessible production URL (or local if explicitly set via env)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://restofy-kafe.vercel.app'
+    const [baseUrl, setBaseUrl] = useState('https://restofy-kafe.vercel.app')
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const origin = window.location.origin
+            // If we are NOT on localhost, use the current domain (e.g. production)
+            if (!origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+                setBaseUrl(origin)
+            }
+            // If we ARE on localhost, keep the default production URL (https://restofy-kafe.vercel.app)
+            // so that the QR code generated can be scanned by a phone.
+            // (Phones cannot access 'localhost')
+        }
+    }, [])
+
     const menuUrl = restaurantSlug
         ? `${baseUrl}/menu/${restaurantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`
         : ''
@@ -213,6 +250,17 @@ export default function QRCodePage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="businessName" className="text-slate-700">İşletme Adı</Label>
+                                <Input
+                                    id="businessName"
+                                    value={businessName}
+                                    onChange={(e) => setBusinessName(e.target.value)}
+                                    className="border-slate-200"
+                                    placeholder="İşletme Adı"
+                                />
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="tableNumber" className="text-slate-700">Masa Numarası (Opsiyonel)</Label>
                                 <Input

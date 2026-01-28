@@ -29,62 +29,65 @@ export function CustomerMenuItem({ item, themeColor = '#f97316' }: CustomerMenuI
 
     return (
         <div className={cn(
-            "bg-white rounded-2xl p-4 shadow-sm transition-all",
+            "bg-white rounded-3xl p-5 shadow-sm border border-slate-100/50 transition-all hover:shadow-premium group animate-in-up",
             !isAvailable && "opacity-50 grayscale"
         )}>
-            <div className="flex gap-4">
+            <div className="flex gap-5">
                 {/* Image */}
-                <div className="relative h-20 w-20 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                <div className="relative h-28 w-28 rounded-2xl bg-slate-50 overflow-hidden shrink-0 shadow-inner border border-slate-100">
                     {item.image_url ? (
                         <Image
                             src={item.image_url}
                             alt={item.name}
                             fill
-                            className="object-cover"
+                            className="object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                     ) : (
-                        <div className="h-full w-full flex items-center justify-center">
-                            <Coffee className="h-8 w-8 text-slate-300" />
+                        <div className="h-full w-full flex items-center justify-center bg-slate-50">
+                            <Coffee className="h-10 w-10 text-slate-200 transition-transform duration-500 group-hover:scale-110" />
                         </div>
                     )}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                     <div>
                         <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-semibold text-slate-800 line-clamp-1">{item.name}</h3>
+                            <h3 className="font-bold text-lg text-slate-800 line-clamp-1 group-hover:text-black transition-colors">{item.name}</h3>
                             {!isAvailable && (
-                                <span className="shrink-0 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 px-2.5 py-1 rounded-full border border-red-100">
                                     Tükendi
                                 </span>
                             )}
                         </div>
                         {item.description && (
-                            <p className="text-sm text-slate-500 line-clamp-2 mt-0.5">
+                            <p className="text-sm text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
                                 {item.description}
                             </p>
                         )}
                     </div>
 
-                    <div className="flex items-center justify-between mt-2">
-                        <p className="text-lg font-bold" style={{ color: themeColor }}>
-                            ₺{item.price.toFixed(2)}
-                        </p>
+                    <div className="flex items-center justify-between mt-4">
+                        <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-medium uppercase tracking-tighter">Fiyat</span>
+                            <p className="text-xl font-black tracking-tight" style={{ color: themeColor }}>
+                                ₺{item.price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </p>
+                        </div>
                         <Button
-                            size="sm"
+                            size="icon"
                             onClick={handleAdd}
                             disabled={!isAvailable}
-                            className="min-h-[44px] min-w-[44px] rounded-xl font-semibold"
+                            className="h-12 w-12 rounded-2xl font-bold shadow-lg shadow-black/5 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
                             style={isAvailable ? {
                                 backgroundColor: themeColor,
                                 color: 'white'
                             } : {
-                                backgroundColor: '#e2e8f0',
-                                color: '#94a3b8'
+                                backgroundColor: '#f1f5f9',
+                                color: '#cbd5e1'
                             }}
                         >
-                            <Plus className="h-5 w-5" />
+                            <Plus className="h-6 w-6 stroke-[3]" />
                         </Button>
                     </div>
                 </div>

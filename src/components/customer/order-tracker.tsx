@@ -119,69 +119,82 @@ export function OrderTracker({
 
             {/* Order Info Card */}
             <div className="p-6">
-                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-xs text-slate-400 uppercase font-semibold">Sipariş No</p>
-                            <p className="text-lg font-bold text-slate-800">#{orderId.slice(0, 8).toUpperCase()}</p>
+                <div className="bg-white rounded-3xl border border-slate-100/50 p-6 shadow-premium transition-all">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="space-y-1">
+                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Sipariş No</p>
+                            <p className="text-sm font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg tabular-nums">#{orderId.slice(0, 8).toUpperCase()}</p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs text-slate-400 uppercase font-semibold">Masa</p>
-                            <p className="text-lg font-bold text-slate-800">{tableNumber}</p>
+                        <div className="text-right space-y-1">
+                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Masa</p>
+                            <p className="text-xl font-black text-slate-800">{tableNumber}</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                            {paymentMethod === 'cash' ? (
-                                <>
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-xl ${paymentMethod === 'cash' ? 'bg-emerald-50' : 'bg-blue-50'}`}>
+                                {paymentMethod === 'cash' ? (
                                     <Banknote className="h-5 w-5 text-emerald-500" />
-                                    <span className="text-sm text-slate-600">Çıkışta Öde</span>
-                                </>
-                            ) : (
-                                <>
+                                ) : (
                                     <CreditCard className="h-5 w-5 text-blue-500" />
-                                    <span className="text-sm text-slate-600">Online Ödeme</span>
-                                </>
-                            )}
+                                )}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-tight">Ödeme</span>
+                                <span className="text-sm font-bold text-slate-700 leading-tight">
+                                    {paymentMethod === 'cash' ? 'Kasada Öde' : 'Online Ödeme'}
+                                </span>
+                            </div>
                         </div>
-                        <p className="text-xl font-bold" style={{ color: themeColor }}>
-                            ₺{totalAmount.toFixed(2)}
-                        </p>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-tight">Toplam</span>
+                            <p className="text-2xl font-black tracking-tighter" style={{ color: themeColor }}>
+                                ₺{totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Progress Steps */}
             <div className="flex-1 px-6 pb-6">
-                <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                    <h3 className="text-sm font-semibold text-slate-400 uppercase mb-4">Sipariş Durumu</h3>
-                    <div className="space-y-4">
+                <div className="bg-white rounded-3xl border border-slate-100/50 p-6 shadow-sm">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 px-1">Sipariş Durumu</h3>
+                    <div className="space-y-6 relative">
+                        {/* Vertical line connector */}
+                        <div className="absolute left-[19px] top-2 bottom-6 w-0.5 bg-slate-100 -z-0" />
+
                         {STATUS_STEPS.slice(0, -1).map((step, index) => {
                             const isCompleted = index < currentStepIndex
                             const isCurrent = index === currentStepIndex
                             const StepIcon = step.icon
 
                             return (
-                                <div key={step.key} className="flex items-center gap-4">
+                                <div key={step.key} className="flex items-center gap-5 relative z-10 group">
                                     <div
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${isCompleted
+                                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-700 shadow-sm ${isCompleted
                                             ? 'bg-emerald-500 text-white'
                                             : isCurrent
-                                                ? 'ring-4 ring-offset-2 text-white'
-                                                : 'bg-slate-100 text-slate-400'
+                                                ? 'scale-110 shadow-lg ring-4 ring-offset-2 text-white'
+                                                : 'bg-slate-50 text-slate-300'
                                             }`}
                                         style={isCurrent ? { backgroundColor: themeColor } : {}}
                                     >
-                                        <StepIcon className="h-5 w-5" />
+                                        <StepIcon className={isCurrent ? "h-6 w-6 animate-pulse" : "h-5 w-5"} />
                                     </div>
                                     <div className="flex-1">
-                                        <p className={`font-medium ${isCompleted || isCurrent ? 'text-slate-800' : 'text-slate-400'}`}>
+                                        <p className={`text-sm font-bold tracking-tight transition-colors ${isCompleted || isCurrent ? 'text-slate-800' : 'text-slate-300'}`}>
                                             {step.label}
                                         </p>
+                                        {isCurrent && (
+                                            <p className="text-xs text-slate-500 mt-0.5 animate-in-fade line-clamp-1">{step.description}</p>
+                                        )}
                                     </div>
                                     {isCompleted && (
-                                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                        <div className="bg-emerald-50 p-1 rounded-full">
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                        </div>
                                     )}
                                 </div>
                             )
@@ -192,14 +205,25 @@ export function OrderTracker({
 
             {/* Footer */}
             <div className="p-6 border-t border-slate-100 bg-white">
-                <Button
-                    variant="outline"
-                    className="w-full h-12 rounded-xl text-slate-600"
-                    onClick={onNewOrder}
-                >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Yeni Sipariş Ver
-                </Button>
+                {currentStepInfo.key === 'served' ? (
+                    <Button
+                        className="w-full h-14 rounded-[2rem] text-lg font-bold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 hover:-translate-y-1 active:translate-y-0 transition-all duration-300 animate-in-up"
+                        style={{ backgroundColor: '#10b981', color: 'white' }}
+                        onClick={onNewOrder}
+                    >
+                        <CheckCircle2 className="h-6 w-6 mr-2 stroke-[3]" />
+                        Siparişi Teslim Aldım
+                    </Button>
+                ) : (
+                    <Button
+                        variant="ghost"
+                        className="w-full h-12 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                        onClick={onNewOrder}
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Geri Dön / Yeni Sipariş
+                    </Button>
+                )}
             </div>
         </div>
     )

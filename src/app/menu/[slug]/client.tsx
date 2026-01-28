@@ -192,84 +192,94 @@ export function CustomerMenuClient({ restaurant, categories, menuItems: initialM
             )}
 
             {/* Hero Header */}
-            <header className={`relative overflow-hidden ${isClosed ? 'mt-10' : ''}`}>
-                {/* Background Pattern - uses theme color */}
+            <header className={`relative min-h-[40vh] flex flex-col justify-end overflow-hidden ${isClosed ? 'mt-10' : ''}`}>
+                {/* Background Image / Gradient */}
                 <div
-                    className="absolute inset-0"
+                    className="absolute inset-0 z-0"
                     style={{
-                        background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}cc 50%, ${themeColor}99 100%)`
+                        background: `radial-gradient(circle at 20% 150%, ${themeColor}, transparent 50%), 
+                                   radial-gradient(circle at 80% -20%, ${themeColor}, transparent 50%),
+                                   linear-gradient(180deg, ${themeColor} 0%, ${themeColor}dd 100%)`
                     }}
                 />
-                <div className="absolute inset-0 opacity-10" style={{
+                <div className="absolute inset-0 z-0 opacity-20 mix-blend-overlay" style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                 }} />
 
-                <div className="relative px-6 pt-12 pb-8">
+                <div className="relative z-10 px-6 pb-12 pt-16">
                     {/* Back Button (when viewing category items) */}
                     {selectedCategory && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleBackToCategories}
-                            className="absolute top-4 left-4 text-white hover:bg-white/20 gap-2"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                            Kategoriler
-                        </Button>
+                        <div className="absolute top-6 left-4 animate-in-fade">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleBackToCategories}
+                                className="text-white hover:bg-white/20 gap-2 backdrop-blur-md bg-white/10 rounded-full pl-2 pr-4"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                <span className="font-semibold text-xs uppercase tracking-widest">Geri</span>
+                            </Button>
+                        </div>
                     )}
 
-                    {/* Logo */}
-                    <div className="flex justify-center mb-4">
-                        {restaurant.logo_url ? (
-                            <div className="relative h-24 w-24 rounded-2xl overflow-hidden border-4 border-white shadow-2xl">
-                                <Image
-                                    src={restaurant.logo_url}
-                                    alt={restaurant.name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                        ) : (
-                            <div className="h-24 w-24 rounded-2xl bg-white/20 backdrop-blur-sm border-4 border-white/50 shadow-2xl flex items-center justify-center">
-                                <Coffee className="h-12 w-12 text-white" />
-                            </div>
-                        )
-                        }
-                    </div>
-
-                    {/* Cafe Info */}
-                    <div className="text-center text-white">
-                        <h1 className="text-3xl font-bold drop-shadow-md">{restaurant.name}</h1>
-                        {restaurant.description && !selectedCategory && (
-                            <p className="text-white/90 mt-2 text-sm max-w-xs mx-auto">
-                                {restaurant.description}
-                            </p>
-                        )}
-                        {selectedCategory && (
-                            <p className="text-white/90 mt-2 text-lg font-medium">
-                                {selectedCategory.name}
-                            </p>
-                        )}
-
-                        {/* Quick Info */}
-                        <div className="flex items-center justify-center gap-4 mt-4">
-                            {tableFromUrl && (
-                                <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>Masa {tableFromUrl}</span>
+                    {/* Logo & Info */}
+                    <div className="flex flex-col items-center text-center">
+                        <div className="relative group mb-6 animate-in-up">
+                            {restaurant.logo_url ? (
+                                <div className="relative h-28 w-28 rounded-[2rem] overflow-hidden border-[6px] border-white/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                                    <Image
+                                        src={restaurant.logo_url}
+                                        alt={restaurant.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="h-28 w-28 rounded-[2rem] bg-white/10 backdrop-blur-xl border-[6px] border-white/20 shadow-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                                    <Coffee className="h-12 w-12 text-white" />
                                 </div>
                             )}
                         </div>
 
+                        <div className="text-white space-y-2 animate-in-up" style={{ animationDelay: '100ms' }}>
+                            <h1 className="text-4xl font-black tracking-tight drop-shadow-sm">{restaurant.name}</h1>
+                            {restaurant.description && !selectedCategory && (
+                                <p className="text-white/80 text-sm max-w-xs mx-auto font-medium leading-relaxed">
+                                    {restaurant.description}
+                                </p>
+                            )}
+                            {selectedCategory && (
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
+                                    <span className="text-white font-bold tracking-tight">
+                                        {selectedCategory.name}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick Info Badges */}
+                        <div className="flex flex-wrap items-center justify-center gap-3 mt-6 animate-in-up" style={{ animationDelay: '200ms' }}>
+                            {tableFromUrl && (
+                                <div className="flex items-center gap-1.5 glass px-4 py-2 rounded-2xl text-xs font-bold text-slate-800 shadow-sm">
+                                    <MapPin className="h-3.5 w-3.5 text-slate-600" />
+                                    <span>MASA {tableFromUrl}</span>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-1.5 glass px-4 py-2 rounded-2xl text-xs font-bold text-slate-800 shadow-sm">
+                                <Clock className="h-3.5 w-3.5 text-slate-600" />
+                                <span>{isClosed ? 'KAPALI' : 'AÇIK'}</span>
+                            </div>
+                        </div>
+
                         {/* Call Waiter */}
-                        <div className="mt-5">
+                        <div className="mt-8 animate-in-up" style={{ animationDelay: '300ms' }}>
                             <CallWaiterButton cafeId={restaurant.id} initialTableNumber={tableFromUrl} />
                         </div>
                     </div>
                 </div>
 
-                {/* Curved Bottom */}
-                <div className="absolute bottom-0 left-0 right-0 h-6 bg-slate-50 rounded-t-[2rem]" />
+                {/* Curved Bottom Decorative */}
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-slate-50 rounded-t-[3rem] z-10" />
             </header>
 
             {/* Content */}
