@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useCartStore, CartItem } from '@/store/cart-store'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -51,6 +51,8 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
 
     const { items, updateQuantity, removeItem, clearCart, getTotalItems, getTotalPrice } = useCartStore()
     const supabase = createClient()
+    const router = useRouter()
+    const pathname = usePathname()
 
     const totalItems = getTotalItems()
     const totalPrice = getTotalPrice()
@@ -91,13 +93,6 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
         const orderId = searchParams?.get('orderId')
 
         if (paymentSuccess === 'true' && orderId) {
-            // Avoid adding same order twice
-            if (placedOrders.some(o => o.id === orderId)) {
-                // Already added, just open tracker
-                setTrackerOpen(true)
-                return
-            }
-
             // Fetch order details simply to show in tracker
             const fetchOrderDetails = async () => {
                 const { data } = await supabase
@@ -113,19 +108,30 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
                         totalAmount: data.total_amount,
                         paymentMethod: 'online',
                     }
+
                     setPlacedOrders(prev => {
+                        // Avoid adding same order twice
                         const exists = prev.some(o => o.id === orderId)
                         if (exists) return prev
                         return [...prev, newOrder]
                     })
+
                     setTrackerOpen(true)
                     clearCart()
                     toast.success('Ödemeniz başarıyla alındı! Siparişiniz hazırlanıyor.')
+
+                    // Clear URL parameters to prevent re-adding on refresh or state change
+                    // Preserve other params like table number
+                    const params = new URLSearchParams(searchParams?.toString())
+                    params.delete('payment_success')
+                    params.delete('orderId')
+                    const newPath = `${pathname}?${params.toString()}`
+                    router.replace(newPath, { scroll: false })
                 }
             }
             fetchOrderDetails()
         }
-    }, [searchParams, supabase, clearCart, placedOrders])
+    }, [searchParams, supabase, clearCart, router, pathname])
 
     // Load persisted orders
     useEffect(() => {
