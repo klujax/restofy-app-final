@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { restaurantService } from '@/services/restaurant.service'
 import { Store, Plus, ExternalLink, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AnalyticsCharts } from '@/components/dashboard/analytics-charts'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -97,6 +98,48 @@ export default function OwnerDashboardPage() {
     useEffect(() => {
         fetchDashboardData()
     }, [fetchDashboardData])
+
+    // Realtime Subscription
+    useEffect(() => {
+        if (restaurants.length === 0) return
+
+        const channels = restaurants.map(restaurant => {
+            return supabase
+                .channel(`dashboard-orders-${restaurant.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*', // INSERT, UPDATE
+                        schema: 'public',
+                        table: 'orders',
+                        filter: `restaurant_id=eq.${restaurant.id}`
+                    },
+                    (payload) => {
+                        // Refresh full data to ensure consistency (aggregates are complex)
+                        // Or optimally, update local state. For now, fetch is safer for consistent stats.
+                        // We will just trigger a fetch and show a toast.
+
+                        if (payload.eventType === 'INSERT') {
+                            const newOrder = payload.new as { table_number?: string; total_amount?: number }
+                            const tableNo = newOrder.table_number || '?'
+                            const amount = newOrder.total_amount
+                            toast.success(`Yeni Sipariş! Masa ${tableNo} - ₺${amount}`)
+
+                            // Play notification sound
+                            const audio = new Audio('/notification.mp3') // Assume we might add this later, or browser default beep
+                            audio.play().catch(e => console.log('Audio play failed', e))
+                        }
+
+                        fetchDashboardData()
+                    }
+                )
+                .subscribe()
+        })
+
+        return () => {
+            channels.forEach(channel => supabase.removeChannel(channel))
+        }
+    }, [restaurants, supabase, fetchDashboardData])
 
     const handleCreateRestaurant = async () => {
         const name = window.prompt('Restoran Adı:')

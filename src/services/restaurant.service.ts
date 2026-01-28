@@ -25,6 +25,18 @@ export const restaurantService = {
         return result as Restaurant
     },
 
+    async updateRestaurant(supabase: SupabaseClient, id: string, data: Partial<Restaurant>) {
+        const { data: result, error } = await supabase
+            .from('restaurants')
+            .update(data)
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+        return result as Restaurant
+    },
+
     async deleteRestaurant(supabase: SupabaseClient, id: string) {
         const { error } = await supabase
             .from('restaurants')

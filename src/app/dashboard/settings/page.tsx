@@ -137,7 +137,7 @@ export default function SettingsPage() {
         setSaving(true)
         try {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user || !restaurantId) throw new Error('Not authenticated')
+            if (!user || !restaurantId) throw new Error('Oturum kapalı veya restoran seçilmedi')
 
             let newLogoUrl = logoUrl
             if (logoFile) {
@@ -148,24 +148,32 @@ export default function SettingsPage() {
                 newLogoUrl = urlData.publicUrl
             }
 
-            await supabase
-                .from('restaurants')
-                .update({
+            // Note: qrColor is currently UI-only or same as theme_color until DB migration
+            // We prioritise themeColor for now.
+
+            await import('@/services/restaurant.service').then(({ restaurantService }) =>
+                restaurantService.updateRestaurant(supabase, restaurantId, {
                     name: businessName,
                     description,
                     theme_color: themeColor,
                     logo_url: newLogoUrl,
                     working_hours: workingHours,
                 })
-                .eq('id', restaurantId)
+            )
 
             setLogoUrl(newLogoUrl)
             setLogoFile(null)
             setLogoPreview(null)
-            toast.success('Ayarlar başarıyla güncellendi!')
+            toast.success('Ayarlar ve renk teması başarıyla güncellendi!')
+
+            // Force refresh locally to ensure UI updates across components
+            localStorage.setItem('theme_color', themeColor)
+            window.dispatchEvent(new Event('storage'))
+
         } catch (error) {
-            console.error(error)
-            toast.error('Ayarlar kaydedilirken bir hata oluştu')
+            console.error('Save Error:', error)
+            const msg = error instanceof Error ? error.message : 'Bilinmeyen hata'
+            toast.error(`Kaydedilemedi: ${msg}`)
         } finally {
             setSaving(false)
         }
