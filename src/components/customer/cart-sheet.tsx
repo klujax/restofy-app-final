@@ -213,14 +213,17 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
     }
 
     const handleOrderCompleted = (orderId: string) => {
-        // Remove completed order from the list
-        const remainingOrders = placedOrders.filter(o => o.id !== orderId)
-        setPlacedOrders(remainingOrders)
+        // Use functional update to ensure we have the latest state and avoid closure staleness
+        setPlacedOrders(currentOrders => {
+            const updatedOrders = currentOrders.filter(o => o.id !== orderId)
 
-        // If no more orders, close tracker sheet
-        if (remainingOrders.length === 0) {
-            setTrackerOpen(false)
-        }
+            // If no more orders, close tracker sheet
+            if (updatedOrders.length === 0) {
+                setTrackerOpen(false)
+            }
+
+            return updatedOrders
+        })
 
         // Show feedback dialog
         setShowFeedback(true)
