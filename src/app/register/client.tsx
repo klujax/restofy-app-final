@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 export default function RegisterClient() {
     const [email, setEmail] = useState('')
@@ -30,7 +31,7 @@ export default function RegisterClient() {
 
         setLoading(true)
 
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -39,13 +40,26 @@ export default function RegisterClient() {
         })
 
         if (signUpError) {
+            console.error('Signup error:', signUpError)
             setError(signUpError.message)
             setLoading(false)
             return
         }
 
-        router.push('/dashboard')
-        router.refresh()
+        if (data.session) {
+            toast.success('Kayıt başarılı! Yönlendiriliyorsunuz...')
+            router.push('/dashboard')
+            router.refresh()
+        } else if (data.user) {
+            // User created but email verification required (or manual approval)
+            setError(null) // Clear any previous errors
+            toast.success('Kayıt oluşturuldu! Lütfen e-posta adresinize gelen doğrulama linkine tıklayın.')
+            // Optional: You might want to show a specific UI state here instead of just a toast
+            setLoading(false)
+        } else {
+            // Fallback
+            router.push('/login')
+        }
     }
 
     return (

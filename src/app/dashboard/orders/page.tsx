@@ -158,17 +158,57 @@ export default function OrdersPage() {
                     schema: 'public',
                     table: 'orders',
                 },
-                (payload) => {
+                async (payload) => {
                     console.log('[Realtime] Order UPDATE received:', payload.new)
                     if (payload.new.restaurant_id !== restaurantId) return
 
-                    setOrders((prev) =>
-                        prev.map((order) =>
-                            order.id === payload.new.id
-                                ? { ...order, status: payload.new.status }
-                                : order
-                        )
-                    )
+                    setOrders((prev) => {
+                        const exists = prev.some(o => o.id === payload.new.id)
+
+                        if (exists) {
+                            return prev.map((order) =>
+                                order.id === payload.new.id
+                                    ? { ...order, status: payload.new.status }
+                                    : order
+                            )
+                        } else {
+                            // Order not in list (missed insert?), fetch and add
+                            // effectively treating it as a new order for the UI
+                            // We can't use async inside setOrders, so we trigger a side effect or handle it outside.
+                            // But here we must return the prev state untouched and let the effect handle it.
+                            return prev
+                        }
+                    })
+
+                    // Handle missing order case asynchronously
+                    // We need to check current state, but we can't easily access the absolute latest state here 
+                    // without causing loops if we are not careful.
+                    // Instead, let's just fetch individual order and use functional update to add it if missing.
+
+                    const { data: updatedOrder } = await supabase
+                        .from('orders')
+                        .select(`*, order_items (*)`)
+                        .eq('id', payload.new.id)
+                        .single()
+
+                    if (updatedOrder) {
+                        setOrders((prev) => {
+                            const exists = prev.some(o => o.id === updatedOrder.id)
+                            if (exists) {
+                                return prev.map((order) =>
+                                    order.id === updatedOrder.id
+                                        ? { ...order, status: updatedOrder.status }
+                                        : order
+                                )
+                            } else {
+                                playNotificationSound()
+                                toast.success('🔔 Yeni sipariş düştü!', {
+                                    description: `Masa ${updatedOrder.table_number || '?'} - ₺${updatedOrder.total_amount.toFixed(2)}`,
+                                })
+                                return [updatedOrder, ...prev]
+                            }
+                        })
+                    }
                 }
             )
             // Service Requests INSERT

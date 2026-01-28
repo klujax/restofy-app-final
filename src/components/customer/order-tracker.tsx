@@ -21,6 +21,7 @@ interface OrderTrackerProps {
     paymentMethod: 'cash' | 'online'
     themeColor: string
     onNewOrder: () => void
+    onOrderCompleted: () => void
 }
 
 const STATUS_STEPS = [
@@ -36,7 +37,8 @@ export function OrderTracker({
     totalAmount,
     paymentMethod,
     themeColor,
-    onNewOrder
+    onNewOrder,
+    onOrderCompleted
 }: OrderTrackerProps) {
     const [currentStatus, setCurrentStatus] = useState<string>('pending')
     const supabase = createClient()
@@ -209,7 +211,7 @@ export function OrderTracker({
                     <Button
                         className="w-full h-14 rounded-[2rem] text-lg font-bold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 hover:-translate-y-1 active:translate-y-0 transition-all duration-300 animate-in-up"
                         style={{ backgroundColor: '#10b981', color: 'white' }}
-                        onClick={onNewOrder}
+                        onClick={onOrderCompleted}
                     >
                         <CheckCircle2 className="h-6 w-6 mr-2 stroke-[3]" />
                         Siparişi Teslim Aldım

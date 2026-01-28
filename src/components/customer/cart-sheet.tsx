@@ -15,8 +15,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Trash2, ShoppingBag, Plus, Minus, CreditCard, Clock, Coffee, Loader2 } from 'lucide-react'
+import { Trash2, ShoppingBag, Plus, Minus, CreditCard, Clock, Coffee, Loader2, PartyPopper } from 'lucide-react'
 import { OrderTracker } from './order-tracker'
 import { WorkingHours, Customer } from '@/types/database'
 
@@ -37,16 +38,16 @@ interface PlacedOrder {
     paymentMethod: PaymentMethod
 }
 
+
 export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initialTableNumber = '', initialUser }: CartSheetProps) {
     const [cartOpen, setCartOpen] = useState(false)
     const [trackerOpen, setTrackerOpen] = useState(false)
-    const [customerName, setCustomerName] = useState('')
     const [saveCard, setSaveCard] = useState(false)
 
     // Table number comes from URL but can be edited
     const [tableNumber, setTableNumber] = useState(initialTableNumber)
     const [loading, setLoading] = useState(false)
-    const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null)
+    const [placedOrders, setPlacedOrders] = useState<PlacedOrder[]>([])
 
     const { items, updateQuantity, removeItem, clearCart, getTotalItems, getTotalPrice } = useCartStore()
     const supabase = createClient()
@@ -90,6 +91,13 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
         const orderId = searchParams?.get('orderId')
 
         if (paymentSuccess === 'true' && orderId) {
+            // Avoid adding same order twice
+            if (placedOrders.some(o => o.id === orderId)) {
+                // Already added, just open tracker
+                setTrackerOpen(true)
+                return
+            }
+
             // Fetch order details simply to show in tracker
             const fetchOrderDetails = async () => {
                 const { data } = await supabase
@@ -99,11 +107,16 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
                     .single()
 
                 if (data) {
-                    setPlacedOrder({
+                    const newOrder: PlacedOrder = {
                         id: orderId,
                         tableNumber: data.table_number,
                         totalAmount: data.total_amount,
                         paymentMethod: 'online',
+                    }
+                    setPlacedOrders(prev => {
+                        const exists = prev.some(o => o.id === orderId)
+                        if (exists) return prev
+                        return [...prev, newOrder]
                     })
                     setTrackerOpen(true)
                     clearCart()
@@ -112,14 +125,29 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
             }
             fetchOrderDetails()
         }
-    }, [searchParams, supabase, clearCart])
+    }, [searchParams, supabase, clearCart, placedOrders])
 
-    // Auto-fill customer name if user is logged in
+    // Load persisted orders
     useEffect(() => {
-        if (initialUser && initialUser.full_name) {
-            setCustomerName(initialUser.full_name)
+        const saved = localStorage.getItem(`placedOrders-${cafeId}`)
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved)
+                if (Array.isArray(parsed)) {
+                    setPlacedOrders(parsed)
+                }
+            } catch (e) {
+                console.error('Failed to parse saved orders', e)
+            }
         }
-    }, [initialUser])
+    }, [cafeId])
+
+    // Persist orders
+    useEffect(() => {
+        if (placedOrders.length > 0) {
+            localStorage.setItem(`placedOrders-${cafeId}`, JSON.stringify(placedOrders))
+        }
+    }, [placedOrders, cafeId])
 
     const handlePayment = async () => {
         if (isClosed) {
@@ -146,7 +174,7 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
                     items: items,
                     totalPrice,
                     tableNumber,
-                    customerName: customerName.trim(),
+                    customerName: initialUser?.full_name || 'Misafir',
                     customerId: initialUser?.id, // Send customer ID if logged in
                     saveCard: saveCard, // Send save card preference
                 }),
@@ -174,16 +202,68 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
         // Note: loading will stay true while redirecting
     }
 
+    const [showFeedback, setShowFeedback] = useState(false)
+
+    // ... (rest of the code)
+
     const handleNewOrder = () => {
-        setPlacedOrder(null)
         setTrackerOpen(false)
+    }
+
+    const handleOrderCompleted = (orderId: string) => {
+        // Remove completed order from the list
+        const remainingOrders = placedOrders.filter(o => o.id !== orderId)
+        setPlacedOrders(remainingOrders)
+
+        // If no more orders, close tracker sheet
+        if (remainingOrders.length === 0) {
+            setTrackerOpen(false)
+        }
+
+        // Show feedback dialog
+        setShowFeedback(true)
     }
 
     return (
         <>
+            {/* Feedback Dialog */}
+            <Dialog open={showFeedback} onOpenChange={setShowFeedback}>
+                <DialogContent className="sm:max-w-md text-center p-8 rounded-3xl border-0 shadow-2xl bg-white">
+                    <div className="absolute right-4 top-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-full transition-colors"
+                            onClick={() => setShowFeedback(false)}
+                        >
+                            <span className="sr-only">Kapat</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </Button>
+                    </div>
+                    <div className="flex flex-col items-center gap-4 py-4">
+                        <div className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center animate-in zoom-in duration-500">
+                            <PartyPopper className="h-10 w-10 text-emerald-600" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold text-slate-900">Afiyet Olsun!</h2>
+                            <p className="text-slate-500">Bizi tercih ettiğiniz için teşekkür ederiz.</p>
+                        </div>
+                        <Button
+                            className="w-full h-12 rounded-xl mt-4 font-bold text-white shadow-lg active:scale-95 transition-all"
+                            style={{ backgroundColor: themeColor }}
+                            onClick={() => {
+                                toast.success("Geri bildiriminiz için teşekkürler!")
+                                setShowFeedback(false)
+                            }}
+                        >
+                            Bizi Puanlayın
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* Order Tracker Sheet */}
-            {/* Order Tracker Sheet */}
-            {placedOrder && (
+            {placedOrders.length > 0 && (
                 <Sheet open={trackerOpen} onOpenChange={setTrackerOpen}>
                     <SheetTrigger asChild>
                         {/* Top Fixed Order Status Banner */}
@@ -196,26 +276,52 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
                                     <Clock className="h-5 w-5 text-emerald-400 animate-pulse" />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-sm">Siparişiniz Hazırlanıyor</p>
+                                    <p className="font-bold text-sm">
+                                        {placedOrders.length > 1
+                                            ? `${placedOrders.length} Siparişiniz Hazırlanıyor`
+                                            : 'Siparişiniz Hazırlanıyor'}
+                                    </p>
                                     <p className="text-xs text-slate-400">Detaylar için dokunun</p>
                                 </div>
                             </div>
                             <div className="bg-white/10 px-3 py-1 rounded-lg">
-                                <span className="text-xs font-bold">#{placedOrder.id.slice(0, 4)}</span>
+                                <span className="text-xs font-bold">
+                                    {placedOrders.length > 1 ? 'LİSTE' : `#${placedOrders[0].id.slice(0, 4)}`}
+                                </span>
                             </div>
                         </div>
                     </SheetTrigger>
 
                     <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0">
-                        <SheetTitle className="sr-only">Sipariş Takibi</SheetTitle>
-                        <OrderTracker
-                            orderId={placedOrder.id}
-                            tableNumber={placedOrder.tableNumber}
-                            totalAmount={placedOrder.totalAmount}
-                            paymentMethod={placedOrder.paymentMethod}
-                            themeColor={themeColor}
-                            onNewOrder={handleNewOrder}
-                        />
+                        <SheetHeader className="p-6 pb-2 border-b border-slate-100/10">
+                            <SheetTitle className="sr-only">Sipariş Takibi</SheetTitle>
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-lg">Siparişlerim ({placedOrders.length})</h3>
+                                <Button variant="ghost" size="sm" onClick={() => setTrackerOpen(false)}>Kapat</Button>
+                            </div>
+                        </SheetHeader>
+                        <ScrollArea className="h-full pb-20">
+                            <div className="flex flex-col gap-8 p-6 pb-32">
+                                {placedOrders.map((order, index) => (
+                                    <div key={order.id} className="space-y-4">
+                                        {index > 0 && <div className="h-px bg-slate-200 w-full" />}
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="font-bold text-slate-900">Sipariş #{order.id.slice(0, 4)}</h4>
+                                            <span className="text-xs text-slate-500">Masa {order.tableNumber}</span>
+                                        </div>
+                                        <OrderTracker
+                                            orderId={order.id}
+                                            tableNumber={order.tableNumber}
+                                            totalAmount={order.totalAmount}
+                                            paymentMethod={order.paymentMethod}
+                                            themeColor={themeColor}
+                                            onNewOrder={handleNewOrder}
+                                            onOrderCompleted={() => handleOrderCompleted(order.id)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
                     </SheetContent>
                 </Sheet>
             )}
@@ -340,19 +446,6 @@ export function CartSheet({ cafeId, themeColor = '#f97316', workingHours, initia
                                     </div>
 
                                     <div className="space-y-4 mb-6">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">
-                                                Adınız Soyadınız {initialUser && '(Kayıtlı)'}
-                                            </label>
-                                            <Input
-                                                placeholder="Sipariş için isminiz"
-                                                value={customerName}
-                                                onChange={(e) => setCustomerName(e.target.value)}
-                                                className="h-11 bg-slate-50"
-                                                disabled={!!initialUser} // Disable if logged in
-                                            />
-                                        </div>
-
                                         {initialUser && (
                                             <div className="flex items-center space-x-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                                                 <input
