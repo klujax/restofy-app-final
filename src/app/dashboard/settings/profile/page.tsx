@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import {
     User,
-    Mail,
     Key,
     Trash2,
     Loader2,
@@ -86,136 +85,123 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-300" />
             </div>
         )
     }
 
     return (
-        <div className="space-y-6 max-w-2xl">
+        <div className="max-w-4xl mx-auto py-10 px-6 animate-in fade-in duration-500">
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <User className="h-6 w-6 text-blue-400" />
-                    Hesap & Güvenlik
+            <div className="mb-10">
+                <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                    <User className="h-8 w-8 text-indigo-500" />
+                    Profil ve Güvenlik
                 </h1>
-                <p className="text-slate-400 text-sm mt-1">
-                    Hesap bilgilerinizi ve güvenlik ayarlarınızı yönetin
+                <p className="text-slate-500 mt-2 font-medium italic">
+                    Restofy hesabınızı ve giriş güvenliğinizi bu panelden kontrol edebilirsiniz.
                 </p>
             </div>
 
-            {/* Account Card */}
-            <Card className="bg-slate-800/30 border-white/5 overflow-hidden">
-                <div className="p-6 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-b border-white/5">
-                    <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                            <User className="h-8 w-8 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Left: Summary Info */}
+                <div className="md:col-span-1 space-y-6">
+                    <Card className="p-8 border-slate-200 shadow-sm bg-white overflow-hidden text-center relative">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" />
+                        <div className="mx-auto h-24 w-24 rounded-3xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center mb-4 transition-transform hover:scale-105">
+                            <User className="h-10 w-10 text-slate-400" />
                         </div>
-                        <div>
-                            <p className="text-lg font-semibold text-white">{email}</p>
-                            <div className="flex items-center gap-3 mt-1">
-                                <span className="inline-flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">
-                                    <Shield className="h-3 w-3" />
-                                    {role === 'super_admin' ? 'Super Admin' : 'İşletme Sahibi'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <h2 className="text-lg font-bold text-slate-800 break-words">{email}</h2>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold mt-2 border border-indigo-100 uppercase tracking-tighter">
+                            <Shield className="h-3 w-3" />
+                            {role === 'super_admin' ? 'Süper Yönetici' : 'İşletme Sahibi'}
+                        </span>
+                    </Card>
 
-                <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5">
-                        <div className="flex items-center gap-3">
-                            <Mail className="h-5 w-5 text-slate-400" />
-                            <div>
-                                <p className="text-sm font-medium text-white">E-posta</p>
-                                <p className="text-xs text-slate-400">{email}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5">
+                    <Card className="p-6 border-slate-200 shadow-sm bg-white space-y-4">
                         <div className="flex items-center gap-3">
                             <Calendar className="h-5 w-5 text-slate-400" />
-                            <div>
-                                <p className="text-sm font-medium text-white">Kayıt Tarihi</p>
-                                <p className="text-xs text-slate-400">{formatDate(createdAt)}</p>
+                            <div className="text-left">
+                                <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Kayıt Tarihi</p>
+                                <p className="text-sm font-bold text-slate-700">{formatDate(createdAt)}</p>
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
-            </Card>
 
-            {/* Password Card */}
-            <Card className="bg-slate-800/30 border-white/5 p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                            <Key className="h-5 w-5 text-amber-400" />
+                {/* Right: Security & Actions */}
+                <div className="md:col-span-2 space-y-6">
+                    <Card className="p-8 border-slate-200 shadow-sm bg-white">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-100">
+                                <Key className="h-5 w-5 text-amber-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-800">Giriş Güvenliği</h3>
                         </div>
-                        <div>
-                            <p className="font-semibold text-white">Şifre</p>
-                            <p className="text-sm text-slate-400">Şifrenizi e-posta ile sıfırlayın</p>
-                        </div>
-                    </div>
-                    <Button
-                        onClick={handlePasswordReset}
-                        disabled={resettingPassword}
-                        variant="outline"
-                        className="bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl gap-2"
-                    >
-                        {resettingPassword ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <ExternalLink className="h-4 w-4" />
-                        )}
-                        Şifre Sıfırla
-                    </Button>
-                </div>
-            </Card>
 
-            {/* Danger Zone */}
-            <Card className="bg-red-500/5 border-red-500/20 p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                            <AlertTriangle className="h-5 w-5 text-red-400" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-red-400">Hesabı Sil</p>
-                            <p className="text-sm text-red-300/70">Bu işlem geri alınamaz</p>
-                        </div>
-                    </div>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="bg-red-600 hover:bg-red-700 rounded-xl gap-2">
-                                <Trash2 className="h-4 w-4" />
-                                Sil
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div>
+                                <p className="font-bold text-slate-800">Şifre Değiştir</p>
+                                <p className="text-sm text-slate-500 mt-0.5 font-medium">Hesap güvenliğiniz için periyodik olarak şifrenizi yenileyin.</p>
+                            </div>
+                            <Button
+                                onClick={handlePasswordReset}
+                                disabled={resettingPassword}
+                                className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold h-11 px-6 shadow-sm whitespace-nowrap gap-2"
+                                variant="outline"
+                            >
+                                {resettingPassword ? <Loader2 className="h-4 w-4 animate-spin text-indigo-500" /> : <ExternalLink className="h-4 w-4" />}
+                                Şifre Sıfırlama Linki Gönder
                             </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className="text-red-400">Emin misiniz?</AlertDialogTitle>
-                                <AlertDialogDescription className="text-slate-400">
-                                    Tüm verileriniz silinecek. Bu işlem geri alınamaz.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">
-                                    İptal
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                    className="bg-red-600 hover:bg-red-700"
-                                    onClick={() => toast.error('Destek ile iletişime geçin')}
-                                >
-                                    Evet, Sil
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                        </div>
+                    </Card>
+
+                    <Card className="p-8 border-red-100 shadow-sm bg-white overflow-hidden relative">
+                        <div className="absolute top-0 left-0 w-1 bg-red-500 h-full" />
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-100">
+                                <AlertTriangle className="h-5 w-5 text-red-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-red-600">Tehlikeli Alan</h3>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div>
+                                <p className="font-bold text-slate-800">Hesabı Tamamen Sil</p>
+                                <p className="text-sm text-slate-500 mt-0.5 font-medium">Hesabınız ve tüm mağaza verileriniz kalıcı olarak silinecektir.</p>
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold h-11 px-8 shadow-sm gap-2">
+                                        <Trash2 className="h-4 w-4" />
+                                        Hesabı Sil
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-white rounded-3xl border-none shadow-2xl p-8">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-2xl font-bold text-slate-900">Emin misiniz?</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-slate-500 font-medium py-2">
+                                            Bu işlem geri alınamaz. Tüm restoran verileriniz, menüleriniz ve geçmiş siparişleriniz sunucularımızdan kalıcı olarak temizlenecektir.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="gap-3 mt-6">
+                                        <AlertDialogCancel className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl h-12 px-6 font-bold border-2">
+                                            Vazgeç
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-red-500/30"
+                                            onClick={() => toast.error('Lütfen silme işlemi için destek ekibimizle iletişime geçin.')}
+                                        >
+                                            Onayla ve Sil
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </Card>
                 </div>
-            </Card>
+            </div>
         </div>
     )
 }

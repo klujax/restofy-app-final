@@ -13,13 +13,10 @@ import {
     Loader2,
     X,
     Wifi,
-    Sparkles,
     Building2,
     QrCode,
     CalendarDays,
     Settings2,
-    MonitorIcon,
-    ArrowRight,
     Plus
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -192,7 +189,6 @@ export default function SettingsPage() {
     }
 
     const currentLogo = logoPreview || logoUrl
-    const selectedColor = THEME_COLORS.find(c => c.value === themeColor)
 
     return (
         <div className="max-w-5xl mx-auto py-10 px-6 animate-in fade-in duration-500">
